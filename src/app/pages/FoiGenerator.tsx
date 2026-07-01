@@ -1,0 +1,201 @@
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { CivicCard } from "../components/CivicCard";
+import {
+  FileText, Copy, Send, Check, ShieldAlert
+} from "lucide-react";
+
+export function FoiGenerator() {
+  const { t } = useTranslation();
+  const [topic, setTopic] = useState("");
+  const [showLetter, setShowLetter] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleGenerate = () => {
+    if (!topic.trim()) return;
+    setShowLetter(true);
+    setCopied(false);
+    setSent(false);
+  };
+
+  const handleCopy = () => {
+    const letterText = document.getElementById("foi-letter-body")?.innerText || "";
+    navigator.clipboard.writeText(letterText);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSend = () => {
+    setSent(true);
+    setTimeout(() => setSent(false), 3000);
+  };
+
+  // Legal deadline SVG ring
+  const renderDeadlineRing = (days: number, total: number) => {
+    const r = 24;
+    const circ = 2 * Math.PI * r;
+    const offset = circ * (1 - days / total);
+    return (
+      <svg width="60" height="60" viewBox="0 0 60 60" className="shrink-0">
+        <circle cx="30" cy="30" r={r} fill="none" stroke="#1C2128" strokeWidth="5" />
+        <circle
+          cx="30"
+          cy="30"
+          r={r}
+          fill="none"
+          stroke="#E8B95C"
+          strokeWidth="5"
+          strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={offset}
+          transform="rotate(-90 30 30)"
+        />
+        <text x="30" y="27" textAnchor="middle" fill="#E8B95C" fontSize="12" fontWeight="700" style={{ fontFamily: "'DM Mono', monospace" }}>
+          {days}
+        </text>
+        <text x="30" y="40" textAnchor="middle" fill="#8B949E" fontSize="7" style={{ fontFamily: "'Inter', sans-serif" }}>
+          days
+        </text>
+      </svg>
+    );
+  };
+
+  return (
+    <div className="p-4 space-y-4 fade-in">
+      {/* Title Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 bg-[#A78BFA]/15 rounded-lg flex items-center justify-center border border-[#A78BFA]/30">
+          <FileText size={16} className="text-[#A78BFA]" />
+        </div>
+        <div>
+          <h3 className="text-[#E8EDF2] text-sm font-semibold" style={{ fontFamily: "'Sora', sans-serif" }}>
+            {t("foiTitle")}
+          </h3>
+          <p className="text-[#8B949E] text-[10px]">Freedom of Information Act automated requests</p>
+        </div>
+      </div>
+
+      {!showLetter ? (
+        <CivicCard className="p-4 space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-bold block">
+              {t("foiLabel")}
+            </label>
+            <textarea
+              required
+              rows={4}
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder={t("foiPlaceholder")}
+              className="w-full bg-[#1C2128] border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F] placeholder-white/20 resize-none leading-relaxed"
+            />
+          </div>
+
+          <button
+            onClick={handleGenerate}
+            disabled={!topic.trim()}
+            className="w-full bg-[#1E8A5F] disabled:opacity-40 disabled:pointer-events-none text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all shadow-md shadow-[#1E8A5F]/15"
+          >
+            <FileText size={16} />
+            {t("foiGenerate")}
+          </button>
+        </CivicCard>
+      ) : (
+        <div className="space-y-4 slide-up">
+          {/* Action Header */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setShowLetter(false)}
+              className="text-[#8B949E] hover:text-white text-xs font-semibold"
+            >
+              Edit request prompt
+            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1 text-[10px] bg-[#1C2128] border border-white/[0.06] text-[#E8EDF2] hover:text-white px-2.5 py-1.5 rounded-lg active:scale-95 transition-all"
+              >
+                {copied ? <Check size={11} className="text-[#1E8A5F]" /> : <Copy size={11} />}
+                {copied ? "Copied!" : "Copy"}
+              </button>
+              <button
+                onClick={handleSend}
+                className="flex items-center gap-1 text-[10px] bg-[#1E8A5F] text-white px-2.5 py-1.5 rounded-lg active:scale-95 transition-all"
+              >
+                {sent ? <Check size={11} /> : <Send size={11} />}
+                {sent ? "Sent!" : "Send"}
+              </button>
+            </div>
+          </div>
+
+          {/* Legal Deadline Card */}
+          <div className="bg-[#E8B95C]/5 border border-[#E8B95C]/35 rounded-xl p-3.5 flex items-center justify-between gap-4">
+            <div className="space-y-1">
+              <p className="text-[#E8B95C] text-xs font-bold" style={{ fontFamily: "'Sora', sans-serif" }}>
+                {t("foiDeadline")}
+              </p>
+              <p className="text-[#8B949E] text-[10px] leading-snug">
+                Under the FOI Act 2011, public institutions must reply within <strong>7 working days</strong>.
+              </p>
+            </div>
+            {renderDeadlineRing(7, 7)}
+          </div>
+
+          {/* Generated Formal Letter Layout */}
+          <CivicCard className="p-5 font-mono text-[11px] leading-relaxed text-[#C4C9D0] overflow-y-auto max-h-[300px] border border-white/[0.08] shadow-inner select-text">
+            <div id="foi-letter-body" className="space-y-4">
+              <p className="font-bold">THE FREEDOM OF INFORMATION ACT, 2011</p>
+              
+              <div className="space-y-0.5">
+                <p>Date: {new Date().toLocaleDateString()}</p>
+                <p>To: The Director-General / Head of Agency,</p>
+                <p>Public Works Department / Relevant LGA Authority,</p>
+                <p>Federal Republic of Nigeria.</p>
+              </div>
+
+              <p className="font-bold text-center border-y border-white/10 py-2">
+                RE: FREEDOM OF INFORMATION (FOI) REQUEST REGARDING PUBLIC EXPENDITURE
+              </p>
+
+              <p>Dear Sir/Ma,</p>
+
+              <p>
+                This request is made pursuant to the provisions of the Freedom of Information Act 2011, which guarantees the right of citizens to access official records and documents held by government agencies.
+              </p>
+
+              <p>
+                Specifically, I am requesting full access to, and certified true copies of, procurement files, payment vouchers, bank disbursement slips, and completion metrics relating to:
+              </p>
+
+              <p className="border-l-2 border-[#1E8A5F] pl-3 py-1 bg-white/[0.01] italic">
+                "{topic}"
+              </p>
+
+              <p>
+                Please note that public institutions have a statutory obligation under Section 4 of the FOI Act 2011 to respond to requests within seven (7) working days of receipt.
+              </p>
+
+              <p>
+                Should you refuse this request, you are required under Section 7 of the Act to notify me in writing, stating the specific exemption codes relied upon.
+              </p>
+
+              <div className="space-y-0.5 pt-4">
+                <p>Sincerely,</p>
+                <p className="font-bold">Auditor Citizen (via CivicPulse Platform)</p>
+                <p className="text-[#8B949E] italic text-[9px]">(Contact details registered on submission file)</p>
+              </div>
+            </div>
+          </CivicCard>
+          
+          <div className="p-3.5 bg-[#1C2128] rounded-xl border border-white/[0.06] flex items-start gap-2.5">
+            <ShieldAlert size={14} className="text-[#1E8A5F] shrink-0 mt-0.5" />
+            <p className="text-[#8B949E] text-[10px] leading-relaxed">
+              If an agency fails to reply within 7 days, it represents a "deemed refusal." CivicPulse automatically registers this infraction in our public Politician Scorecard to lower their transparency rating.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
