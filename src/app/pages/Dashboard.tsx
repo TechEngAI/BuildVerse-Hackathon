@@ -123,25 +123,12 @@ export function Dashboard() {
 
   return (
     <div className="pb-6 px-4 space-y-5 fade-in">
-      {/* Premium Video Hero Card */}
-      <div className="mt-4 rounded-2xl overflow-hidden border border-white/[0.07] relative bg-black shadow-xl h-[260px] flex flex-col justify-end">
-        {/* Background Looping Abstract Video */}
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover opacity-35 mix-blend-screen pointer-events-none"
-        >
-          <source 
-            src="https://cdn.pixabay.com/video/2021/04/12/70876-537494301_tiny.mp4" 
-            type="video/mp4" 
-          />
-        </video>
-        
-        {/* Fallback Ledger Grid overlay */}
-        <div className="absolute inset-0 grid-bg-hero opacity-10 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0E1116] via-transparent to-transparent opacity-80" />
+      {/* Premium Animated Hero Card */}
+      <div className="mt-4 rounded-2xl overflow-hidden border border-white/[0.07] relative bg-[#090C10] shadow-xl h-[260px] flex flex-col justify-end">
+        {/* Animated Grid & Glowing background */}
+        <div className="absolute inset-0 grid-bg-hero opacity-15 animate-grid-move pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(30,138,95,0.18),transparent_70%)] animate-glow-pulse pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0E1116] via-transparent to-transparent opacity-90 pointer-events-none" />
 
         <div className="relative p-5 z-10 space-y-2.5">
           <div className="flex items-center gap-2">
