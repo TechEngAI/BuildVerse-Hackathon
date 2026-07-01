@@ -45,7 +45,7 @@ export function TopBar({ onBack, showBack }: NavBarProps) {
                 e.currentTarget.style.display = 'none';
               }}
             />
-            <span className="text-sm font-bold text-[#E8EDF2]" style={{ fontFamily: "'Sora', sans-serif" }}>
+            <span className="text-sm font-bold text-[#E8EDF2] font-sora">
               {t("appName")}
             </span>
           </div>
@@ -70,12 +70,11 @@ export function TopBar({ onBack, showBack }: NavBarProps) {
             <button
               key={l.key}
               onClick={() => setLang(l.key)}
-              className={`px-2 py-0.5 rounded text-[10px] transition-all font-medium ${
+              className={`px-2 py-0.5 rounded text-[10px] transition-all font-medium font-dm-mono ${
                 lang === l.key
                   ? "bg-[#1E8A5F] text-white"
                   : "text-[#8B949E] hover:text-white"
               }`}
-              style={{ fontFamily: "'DM Mono', monospace" }}
             >
               {l.label}
             </button>
@@ -136,8 +135,7 @@ export function BottomNav() {
               />
             </div>
             <span
-              className={`text-[10px] font-medium ${active ? "text-[#1E8A5F]" : "text-[#8B949E]"}`}
-              style={{ fontFamily: "'DM Mono', monospace" }}
+              className={`text-[10px] font-medium font-dm-mono ${active ? "text-[#1E8A5F]" : "text-[#8B949E]"}`}
             >
               {t(labelKey)}
             </span>

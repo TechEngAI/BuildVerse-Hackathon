@@ -15,7 +15,7 @@ export function MapPin({ flagged, onClick, className = "", amount }: MapPinProps
     >
       <div className="relative flex flex-col items-center">
         {amount && (
-          <div className="absolute -top-6 bg-[#0E1116] border border-white/[0.1] rounded px-1.5 py-0.5 text-[8px] font-bold text-white whitespace-nowrap shadow-md pointer-events-none" style={{ fontFamily: "'DM Mono', monospace" }}>
+          <div className="absolute -top-6 bg-[#0E1116] border border-white/[0.1] rounded px-1.5 py-0.5 text-[8px] font-bold text-white whitespace-nowrap shadow-md pointer-events-none font-dm-mono">
             {amount}
           </div>
         )}

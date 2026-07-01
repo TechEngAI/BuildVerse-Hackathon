@@ -84,7 +84,7 @@ export default function App() {
         <div className="bg-[#21262D] border-b border-[#E8B95C]/20 px-4 py-2 flex items-center justify-between animate-fade-in shrink-0">
           <div className="flex items-center gap-2">
             <WifiOff size={13} className="text-[#E8B95C]" />
-            <span className="text-[10px] text-[#E8B95C] font-semibold" style={{ fontFamily: "'DM Mono', monospace" }}>
+            <span className="text-[10px] text-[#E8B95C] font-semibold font-dm-mono">
               {t("offline")}
             </span>
           </div>

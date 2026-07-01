@@ -40,8 +40,7 @@ export function AlertBadge({ level, label }: AlertBadgeProps) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${cfg.bg} ${cfg.text} ${cfg.border}`}
-      style={{ fontFamily: "'DM Mono', monospace", letterSpacing: "0.06em" }}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${cfg.bg} ${cfg.text} ${cfg.border} font-dm-mono letter-spacing-mono`}
     >
       <BadgeIcon size={9} />
       {label}

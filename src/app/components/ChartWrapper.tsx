@@ -9,14 +9,13 @@ interface ChartWrapperProps {
 }
 
 export function ChartWrapper({ isLoading, isEmpty, title, children }: ChartWrapperProps) {
-  const skeletonWidths = [0.85, 0.55, 0.72, 0.42, 0.65];
+  const widths = ["w-[85%]", "w-[55%]", "w-[72%]", "w-[42%]", "w-[65%]"];
 
   return (
     <div className="bg-[#161B22] rounded-xl border border-white/[0.07] p-4">
       {title && (
         <p
-          className="text-[#8B949E] text-[10px] font-medium mb-3 uppercase tracking-widest"
-          style={{ fontFamily: "'DM Mono', monospace" }}
+          className="text-[#8B949E] text-[10px] font-medium mb-3 uppercase tracking-widest font-dm-mono"
         >
           {title}
         </p>
@@ -24,12 +23,11 @@ export function ChartWrapper({ isLoading, isEmpty, title, children }: ChartWrapp
 
       {isLoading ? (
         <div className="space-y-3 animate-pulse">
-          {skeletonWidths.map((w, i) => (
+          {widths.map((wClass, i) => (
             <div key={i} className="flex items-center gap-2">
               <div className="w-14 h-3 bg-[#21262D] rounded" />
               <div
-                className="h-5 bg-[#21262D] rounded flex-1"
-                style={{ maxWidth: `${w * 100}%` }}
+                className={`h-5 bg-[#21262D] rounded flex-1 ${wClass}`}
               />
             </div>
           ))}

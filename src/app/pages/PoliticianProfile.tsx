@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CivicCard } from "../components/CivicCard";
+import { motion } from "motion/react";
 import {
-  Award, ShieldAlert, CheckCircle, Clock, XCircle, ThumbsUp, ThumbsDown, Link, Globe
+  Award, ShieldAlert, CheckCircle, Clock, XCircle, ThumbsUp, ThumbsDown, Link
 } from "lucide-react";
 
 const promises = [
@@ -32,13 +33,10 @@ export function PoliticianProfile() {
     );
   };
 
-  // Accountability Score Ring rendering
   const renderScoreRing = (score: number) => {
     const r = 40;
     const circ = 2 * Math.PI * r;
     const offset = circ - (score / 100) * circ;
-    
-    // Crimson red for low score, Gold for medium, Green for high
     const color = score >= 70 ? "#1E8A5F" : score >= 40 ? "#E8B95C" : "#E3433D";
 
     return (
@@ -55,12 +53,12 @@ export function PoliticianProfile() {
           strokeDasharray={circ}
           strokeDashoffset={offset}
           transform="rotate(-90 50 50)"
-          style={{ transition: "stroke-dashoffset 0.8s ease" }}
+          className="transition-all duration-700 ease-out"
         />
-        <text x="50" y="47" textAnchor="middle" fill={color} fontSize="20" fontWeight="700" style={{ fontFamily: "'DM Mono', monospace" }}>
+        <text x="50" y="47" textAnchor="middle" fill={color} fontSize="20" fontWeight="700" className="font-dm-mono">
           {score}
         </text>
-        <text x="50" y="63" textAnchor="middle" fill="#8B949E" fontSize="8" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <text x="50" y="63" textAnchor="middle" fill="#8B949E" fontSize="8" className="font-inter">
           / 100
         </text>
       </svg>
@@ -79,21 +77,21 @@ export function PoliticianProfile() {
   };
 
   return (
-    <div className="p-4 space-y-4 fade-in">
+    <div className="p-4 space-y-4 fade-in font-inter">
       {/* Politician Profile Summary */}
       <CivicCard className="p-4 flex gap-4 items-center" severity="critical">
         {renderScoreRing(47)}
         
         <div className="flex-1 space-y-0.5">
           <div className="flex items-center gap-1.5">
-            <span className="text-[#8B949E] text-[9px] uppercase tracking-widest font-mono">Executive Audit</span>
+            <span className="text-[#8B949E] text-[9px] uppercase tracking-widest font-mono font-dm-mono">Executive Audit</span>
           </div>
-          <h3 className="text-[#E8EDF2] text-sm font-bold" style={{ fontFamily: "'Sora', sans-serif" }}>
+          <h3 className="text-[#E8EDF2] text-sm font-bold font-sora">
             Governor Ifeanyi Okowa
           </h3>
           <p className="text-[#8B949E] text-[10px]">Former Governor, Delta State</p>
           <div className="pt-2 flex items-center gap-1.5">
-            <span className="bg-[#E3433D]/25 border border-[#E3433D]/30 text-[#FF6B65] text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono">
+            <span className="bg-[#E3433D]/25 border border-[#E3433D]/30 text-[#FF6B65] text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider font-mono font-dm-mono">
               Convicted 2022
             </span>
           </div>
@@ -111,10 +109,10 @@ export function PoliticianProfile() {
       {/* Promises Tracker ledger */}
       <div className="space-y-2.5">
         <div className="flex items-center justify-between px-1">
-          <h4 className="text-[#E8EDF2] text-[11px] uppercase tracking-widest" style={{ fontFamily: "'DM Mono', monospace" }}>
+          <h4 className="text-[#E8EDF2] text-[11px] uppercase tracking-widest font-dm-mono">
             Campaign Promises Ledger
           </h4>
-          <span className="text-[#8B949E] text-[10px]" style={{ fontFamily: "'DM Mono', monospace" }}>
+          <span className="text-[#8B949E] text-[10px] font-dm-mono">
             {promiseList.length} total
           </span>
         </div>
@@ -130,7 +128,7 @@ export function PoliticianProfile() {
                   <p className="text-[#E8EDF2] text-xs font-semibold leading-snug">
                     {p.title}
                   </p>
-                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider flex items-center gap-1 shrink-0 ${cfg.bg} ${cfg.border} ${cfg.color}`} style={{ fontFamily: "'DM Mono', monospace" }}>
+                  <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider flex items-center gap-1 shrink-0 ${cfg.bg} ${cfg.border} ${cfg.color} font-dm-mono`} >
                     <StatusIcon size={9} />
                     {cfg.label}
                   </span>
@@ -156,16 +154,16 @@ export function PoliticianProfile() {
                       title="Citizen confirms this claim"
                     >
                       <ThumbsUp size={11} />
-                      <span className="tabular-nums font-mono text-[9px]">{p.agree}</span>
+                      <span className="tabular-nums font-mono text-[9px] font-dm-mono">{p.agree}</span>
                     </button>
-                    <span className="text-white/10">|</span>
+                    <span className="text-white/10 font-dm-mono">|</span>
                     <button
                       onClick={() => handleVote(p.id, "disagree")}
                       className="flex items-center gap-1 text-[#8B949E] hover:text-[#E3433D] transition-colors"
                       title="Citizen disputes this claim"
                     >
                       <ThumbsDown size={11} />
-                      <span className="tabular-nums font-mono text-[9px]">{p.disagree}</span>
+                      <span className="tabular-nums font-mono text-[9px] font-dm-mono">{p.disagree}</span>
                     </button>
                   </div>
                 </div>

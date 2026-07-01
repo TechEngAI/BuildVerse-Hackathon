@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAppStore } from "../store/useAppStore";
 import { CivicCard } from "../components/CivicCard";
+import { motion } from "motion/react";
 import {
   Radio, Camera, Navigation, WifiOff, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck
 } from "lucide-react";
@@ -13,7 +14,7 @@ export function IssueReporter() {
   const [category, setCategory] = useState("Roads");
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
-  const [gps, setGps] = useState("9.0820°N, 7.4130°E");
+  const [gps] = useState("9.0820°N, 7.4130°E");
   
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -22,7 +23,6 @@ export function IssueReporter() {
   }, []);
 
   const handleCapturePhoto = () => {
-    // Mock base64 photo
     setPhoto("data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=");
   };
 
@@ -32,12 +32,10 @@ export function IssueReporter() {
 
     await addIssue(category, description, photo || undefined, gps);
     
-    // Clear form
     setDescription("");
     setPhoto(null);
     setShowSuccess(true);
     
-    // Auto-clear success message after 3 seconds
     setTimeout(() => {
       setShowSuccess(false);
     }, 4000);
@@ -52,19 +50,18 @@ export function IssueReporter() {
             <Radio size={16} className="text-[#F97316]" />
           </div>
           <div>
-            <h3 className="text-[#E8EDF2] text-sm font-semibold" style={{ fontFamily: "'Sora', sans-serif" }}>
+            <h3 className="text-[#E8EDF2] text-sm font-semibold font-sora">
               {t("reportTitle")}
             </h3>
             <p className="text-[#8B949E] text-[10px]">Direct-action citizen audits</p>
           </div>
         </div>
 
-        {/* Sync Trigger manually */}
         {!isOffline && (
           <button
             onClick={syncOfflineQueue}
             disabled={isSyncing}
-            className="flex items-center gap-1 text-[10px] bg-[#1C2128] border border-white/[0.06] text-[#8B949E] hover:text-white px-2.5 py-1 rounded-lg active:scale-95 transition-all disabled:opacity-40"
+            className="flex items-center gap-1 text-[10px] bg-[#1C2128] border border-white/[0.06] text-[#8B949E] hover:text-white px-2.5 py-1 rounded-lg active:scale-95 transition-all disabled:opacity-40 font-dm-mono"
           >
             <RefreshCw size={11} className={isSyncing ? "animate-spin" : ""} />
             Sync
@@ -77,7 +74,7 @@ export function IssueReporter() {
         <div className="bg-[#21262D] border border-[#E8B95C]/20 rounded-xl p-3 flex items-start gap-2.5 shadow-md">
           <WifiOff size={15} className="text-[#E8B95C] shrink-0 mt-0.5" />
           <div>
-            <p className="text-[#E8B95C] text-[11px] font-bold uppercase tracking-wider font-mono">
+            <p className="text-[#E8B95C] text-[11px] font-bold uppercase tracking-wider font-dm-mono">
               Offline Mode Enabled
             </p>
             <p className="text-[#8B949E] text-[10px] leading-snug mt-0.5">
@@ -92,7 +89,7 @@ export function IssueReporter() {
         <div className="bg-[#1E8A5F]/15 border border-[#1E8A5F]/40 text-[#26B07A] rounded-xl p-3.5 flex items-start gap-2.5 shadow-md slide-up">
           <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
           <div>
-            <p className="text-[#26B07A] text-xs font-bold" style={{ fontFamily: "'Sora', sans-serif" }}>
+            <p className="text-[#26B07A] text-xs font-bold font-sora">
               {isOffline ? "Report Queued Locally" : t("reportSynced")}
             </p>
             <p className="text-[#8B949E] text-[10px] leading-snug mt-0.5">
@@ -109,10 +106,15 @@ export function IssueReporter() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Category Dropdown */}
           <div className="space-y-1.5">
-            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-bold block">
+            <label 
+              htmlFor="category-select"
+              className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-dm-mono font-bold block"
+            >
               {t("reportCategory")}
             </label>
             <select
+              id="category-select"
+              title="Audit Category Selection"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full bg-[#1C2128] border border-white/[0.07] rounded-xl px-3 py-2.5 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F]"
@@ -127,7 +129,7 @@ export function IssueReporter() {
 
           {/* Description Textarea */}
           <div className="space-y-1.5">
-            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-bold block">
+            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-dm-mono font-bold block">
               {t("reportDesc")}
             </label>
             <textarea
@@ -142,13 +144,16 @@ export function IssueReporter() {
 
           {/* Photo Capture Zone */}
           <div className="space-y-1.5">
-            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-bold block">
+            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-dm-mono font-bold block">
               {t("reportPhoto")}
             </label>
             
             {photo ? (
               <div className="relative rounded-xl overflow-hidden aspect-video bg-[#0E1116] border border-white/[0.06] flex items-center justify-center">
-                <div className="absolute inset-0 bg-cover bg-center filter saturate-50" style={{ backgroundImage: `url(${photo})` }} />
+                <div 
+                  className="absolute inset-0 bg-cover bg-center filter saturate-50 bg-[var(--bg-photo-url)]" 
+                  style={{ "--bg-photo-url": `url(${photo})` } as React.CSSProperties}
+                />
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                   <CheckCircle2 size={24} className="text-[#1E8A5F]" />
                 </div>
@@ -174,15 +179,15 @@ export function IssueReporter() {
 
           {/* GPS Coordinates */}
           <div className="space-y-1.5">
-            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-bold block">
+            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-dm-mono font-bold block">
               {t("reportGPS")}
             </label>
             <div className="bg-[#1C2128] border border-white/[0.07] rounded-xl px-3 py-2.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Navigation size={12} className="text-[#1E8A5F]" />
-                <span className="text-[#8B949E] text-[10px] font-mono">{gps}</span>
+                <span className="text-[#8B949E] text-[10px] font-mono font-dm-mono">{gps}</span>
               </div>
-              <span className="text-[#1E8A5F] text-[9px] font-bold uppercase tracking-wider">
+              <span className="text-[#1E8A5F] text-[9px] font-bold uppercase tracking-wider font-dm-mono">
                 Captured ✓
               </span>
             </div>
@@ -201,7 +206,7 @@ export function IssueReporter() {
 
       {/* Reported Local Issues Queue list */}
       <div className="space-y-2.5">
-        <p className="text-[#8B949E] text-[10px] uppercase tracking-widest px-1" style={{ fontFamily: "'DM Mono', monospace" }}>
+        <p className="text-[#8B949E] text-[10px] uppercase tracking-widest px-1 font-dm-mono">
           Your Audit Ledger ({offlineIssues.length} entries)
         </p>
 
@@ -216,12 +221,11 @@ export function IssueReporter() {
                 <div className="flex items-center justify-between">
                   <span className="text-[#E8EDF2] text-xs font-bold">{issue.category}</span>
                   <span
-                    className={`text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                    className={`text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider font-dm-mono ${
                       issue.synced
                         ? "bg-[#1E8A5F]/10 border-[#1E8A5F]/30 text-[#26B07A]"
                         : "bg-[#E8B95C]/10 border-[#E8B95C]/30 text-[#FCD34D]"
                     }`}
-                    style={{ fontFamily: "'DM Mono', monospace" }}
                   >
                     {issue.synced ? "Synced" : "Offline"}
                   </span>
@@ -229,7 +233,7 @@ export function IssueReporter() {
                 <p className="text-[#C4C9D0] text-xs leading-relaxed truncate">
                   {issue.description}
                 </p>
-                <div className="flex justify-between items-center pt-2 border-t border-white/[0.04] text-[9px] text-[#8B949E] font-mono">
+                <div className="flex justify-between items-center pt-2 border-t border-white/[0.04] text-[9px] text-[#8B949E] font-dm-mono">
                   <span>{new Date(issue.timestamp).toLocaleTimeString()}</span>
                   <span>{issue.gps}</span>
                 </div>

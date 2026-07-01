@@ -241,3 +241,29 @@
 .fade-in {
   animation: fade-in 0.3s ease-out forwards;
 }
+
+/* Custom styles to replace inline styles and address linter warnings */
+.font-dm-mono {
+  font-family: 'DM Mono', monospace;
+}
+
+.letter-spacing-mono {
+  letter-spacing: 0.06em;
+}
+
+.font-sora {
+  font-family: 'Sora', ui-sans-serif, sans-serif;
+}
+
+.font-inter {
+  font-family: 'Inter', ui-sans-serif, sans-serif;
+}
+
+.grid-bg-hero {
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 24px, rgba(30,138,95,0.15) 24px, rgba(30,138,95,0.15) 25px), repeating-linear-gradient(90deg, transparent, transparent 24px, rgba(30,138,95,0.15) 24px, rgba(30,138,95,0.15) 25px);
+}
+
+.grid-bg-map {
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.015) 39px, rgba(255,255,255,0.015) 40px), repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.015) 39px, rgba(255,255,255,0.015) 40px);
+}
+

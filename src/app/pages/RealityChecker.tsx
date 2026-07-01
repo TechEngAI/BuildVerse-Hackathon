@@ -4,26 +4,22 @@ import { useAppStore } from "../store/useAppStore";
 import { CivicCard } from "../components/CivicCard";
 import { ChartWrapper } from "../components/ChartWrapper";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { motion } from "motion/react";
 import { Users, Check, AlertOctagon, HelpCircle } from "lucide-react";
 
 export function RealityChecker() {
   const { t } = useTranslation();
   const { isOffline, citizenPollStats, addCitizenPoll } = useAppStore();
   const [hasVoted, setHasVoted] = useState(false);
-  const [votedOption, setVotedOption] = useState<string | null>(null);
 
   const handleVote = async (option: "yes" | "no" | "partial") => {
-    setVotedOption(option);
     setHasVoted(true);
-    
-    // Save report to IndexedDB / Zustand
     await addCitizenPoll("TraderMoni / Market Hawker Fund", option);
   };
 
   const totalVotes = citizenPollStats.yes + citizenPollStats.no + citizenPollStats.partial;
   const matchPercentage = totalVotes > 0 ? (citizenPollStats.yes / totalVotes) * 100 : 0;
 
-  // Recharts representation
   const comparisonData = [
     { name: "Official claim", percentage: 100, fill: "#1E8A5F" },
     { name: "Citizen reality", percentage: Math.round(matchPercentage), fill: "#E3433D" }
@@ -49,7 +45,7 @@ export function RealityChecker() {
           <Users size={16} className="text-[#3B82F6]" />
         </div>
         <div>
-          <h3 className="text-[#E8EDF2] text-sm font-semibold" style={{ fontFamily: "'Sora', sans-serif" }}>
+          <h3 className="text-[#E8EDF2] text-sm font-semibold font-sora">
             {t("socialTitle")}
           </h3>
           <p className="text-[#8B949E] text-[10px]">Crowdsourced disbursement auditor</p>
@@ -58,8 +54,8 @@ export function RealityChecker() {
 
       {/* Program Details */}
       <CivicCard className="p-4">
-        <p className="text-[#8B949E] text-[9px] uppercase tracking-widest font-mono">Auditing Program</p>
-        <h4 className="text-[#E8EDF2] text-sm font-bold mt-0.5 leading-snug" style={{ fontFamily: "'Sora', sans-serif" }}>
+        <p className="text-[#8B949E] text-[9px] uppercase tracking-widest font-mono font-dm-mono">Auditing Program</p>
+        <h4 className="text-[#E8EDF2] text-sm font-bold mt-0.5 leading-snug font-sora">
           {t("socialProgram")}
         </h4>
         <p className="text-[#8B949E] text-[10px] mt-1.5 leading-relaxed">
@@ -77,24 +73,22 @@ export function RealityChecker() {
             </div>
             
             <div className="flex flex-col gap-2">
-              <button
-                onClick={() => handleVote("yes")}
-                className="w-full bg-[#1C2128] hover:bg-[#1E8A5F] hover:text-white border border-white/[0.06] text-[#C4C9D0] text-xs font-semibold py-3 rounded-xl transition-all active:scale-[0.98]"
-              >
-                {t("socialYes")}
-              </button>
-              <button
-                onClick={() => handleVote("no")}
-                className="w-full bg-[#1C2128] hover:bg-[#E3433D] hover:text-white border border-white/[0.06] text-[#C4C9D0] text-xs font-semibold py-3 rounded-xl transition-all active:scale-[0.98]"
-              >
-                {t("socialNo")}
-              </button>
-              <button
-                onClick={() => handleVote("partial")}
-                className="w-full bg-[#1C2128] hover:bg-[#E8B95C] hover:text-[#0E1116] border border-white/[0.06] text-[#C4C9D0] text-xs font-semibold py-3 rounded-xl transition-all active:scale-[0.98]"
-              >
-                {t("socialPartial")}
-              </button>
+              {["yes", "no", "partial"].map((opt) => (
+                <motion.button
+                  whileTap={{ scale: 0.98 }}
+                  key={opt}
+                  onClick={() => handleVote(opt as any)}
+                  className={`w-full bg-[#1C2128] border border-white/[0.06] text-[#C4C9D0] text-xs font-semibold py-3 rounded-xl transition-all ${
+                    opt === "yes"
+                      ? "hover:bg-[#1E8A5F] hover:text-white"
+                      : opt === "no"
+                      ? "hover:bg-[#E3433D] hover:text-white"
+                      : "hover:bg-[#E8B95C] hover:text-[#0E1116]"
+                  }`}
+                >
+                  {opt === "yes" ? t("socialYes") : opt === "no" ? t("socialNo") : t("socialPartial")}
+                </motion.button>
+              ))}
             </div>
           </div>
         ) : (
@@ -103,7 +97,7 @@ export function RealityChecker() {
               <Check size={18} className="text-[#1E8A5F]" />
             </div>
             <div>
-              <p className="text-[#E8EDF2] text-xs font-bold">{t("socialThank")}</p>
+              <p className="text-[#E8EDF2] text-xs font-bold font-sora">{t("socialThank")}</p>
               <p className="text-[#8B949E] text-[10px] mt-1">
                 {isOffline
                   ? t("reportOffline")
@@ -147,7 +141,7 @@ export function RealityChecker() {
         <CivicCard className="p-4" severity="critical">
           <div className="flex items-center gap-2 mb-3">
             <AlertOctagon size={14} className="text-[#E3433D]" />
-            <p className="text-[#E3433D] text-[10px] font-bold uppercase tracking-wider" style={{ fontFamily: "'DM Mono', monospace" }}>
+            <p className="text-[#E3433D] text-[10px] font-bold uppercase tracking-wider font-dm-mono">
               Crowdsourced Discrepancy
             </p>
           </div>
@@ -157,20 +151,20 @@ export function RealityChecker() {
 
           <div className="grid grid-cols-3 gap-2 text-center pt-3.5 border-t border-white/[0.05]">
             <div>
-              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono">Confirmed</p>
-              <p className="text-[#1E8A5F] text-xs font-bold mt-0.5" style={{ fontFamily: "'DM Mono', monospace" }}>
+              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Confirmed</p>
+              <p className="text-[#1E8A5F] text-xs font-bold mt-0.5 font-dm-mono">
                 {citizenPollStats.yes}
               </p>
             </div>
             <div>
-              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono">Unreceived</p>
-              <p className="text-[#E3433D] text-xs font-bold mt-0.5" style={{ fontFamily: "'DM Mono', monospace" }}>
+              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Unreceived</p>
+              <p className="text-[#E3433D] text-xs font-bold mt-0.5 font-dm-mono">
                 {citizenPollStats.no}
               </p>
             </div>
             <div>
-              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono">Partial</p>
-              <p className="text-[#E8B95C] text-xs font-bold mt-0.5" style={{ fontFamily: "'DM Mono', monospace" }}>
+              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Partial</p>
+              <p className="text-[#E8B95C] text-xs font-bold mt-0.5 font-dm-mono">
                 {citizenPollStats.partial}
               </p>
             </div>

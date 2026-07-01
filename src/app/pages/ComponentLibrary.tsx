@@ -3,9 +3,7 @@ import { CivicCard } from "../components/CivicCard";
 import { AlertBadge } from "../components/AlertBadge";
 import { ChartWrapper } from "../components/ChartWrapper";
 import { MapPin } from "../components/MapPin";
-import {
-  Info, AlertOctagon, RefreshCw, Radio, Layers
-} from "lucide-react";
+import { Layers } from "lucide-react";
 
 export function ComponentLibrary() {
   const { t } = useTranslation();
@@ -26,7 +24,7 @@ export function ComponentLibrary() {
           <Layers size={16} className="text-[#E8B95C]" />
         </div>
         <div>
-          <h3 className="text-[#E8EDF2] text-sm font-semibold" style={{ fontFamily: "'Sora', sans-serif" }}>
+          <h3 className="text-[#E8EDF2] text-sm font-semibold font-sora">
             {t("compTitle")}
           </h3>
           <p className="text-[#8B949E] text-[10px]">{t("compSubtitle")}</p>
@@ -35,7 +33,7 @@ export function ComponentLibrary() {
 
       {/* Design Colors Tokens section */}
       <div className="space-y-3">
-        <p className="text-[#8B949E] text-[9px] uppercase tracking-widest font-mono" style={{ fontFamily: "'DM Mono', monospace" }}>
+        <p className="text-[#8B949E] text-[9px] uppercase tracking-widest font-mono font-dm-mono">
           Design Tokens & Palette
         </p>
         
@@ -43,14 +41,14 @@ export function ComponentLibrary() {
           {colorTokens.map((token, i) => (
             <div key={i} className="flex items-center gap-3 bg-[#161B22] p-2.5 rounded-xl border border-white/[0.06]">
               <div
-                className="w-10 h-10 rounded-lg shrink-0 border border-white/[0.1] shadow-inner"
-                style={{ backgroundColor: token.hex }}
+                className="w-10 h-10 rounded-lg shrink-0 border border-white/[0.1] shadow-inner bg-[var(--token-bg)]"
+                style={{ "--token-bg": token.hex } as React.CSSProperties}
               />
               <div className="min-w-0">
-                <p className="text-[#E8EDF2] text-xs font-bold">{token.name}</p>
+                <p className="text-[#E8EDF2] text-xs font-bold font-sora">{token.name}</p>
                 <p className="text-[10px] text-[#8B949E] mt-0.5 leading-snug">{token.description}</p>
               </div>
-              <span className="ml-auto text-[10px] text-[#8B949E] font-mono" style={{ fontFamily: "'DM Mono', monospace" }}>
+              <span className="ml-auto text-[10px] text-[#8B949E] font-mono font-dm-mono">
                 {token.hex}
               </span>
             </div>
@@ -60,7 +58,7 @@ export function ComponentLibrary() {
 
       {/* Shared primitive elements section */}
       <div className="space-y-3.5">
-        <p className="text-[#8B949E] text-[9px] uppercase tracking-widest font-mono" style={{ fontFamily: "'DM Mono', monospace" }}>
+        <p className="text-[#8B949E] text-[9px] uppercase tracking-widest font-mono font-dm-mono">
           Components Showcase
         </p>
 
@@ -107,7 +105,7 @@ export function ComponentLibrary() {
         {/* Charts */}
         <div className="space-y-2">
           <p className="text-[#8B949E] text-[10px] font-semibold">ChartWrapper Loading Skeleton States</p>
-          <ChartWrapper isLoading title="Figma design chart skeleton placeholder" children={null} />
+          <ChartWrapper isLoading title="System design chart skeleton placeholder" children={null} />
         </div>
       </div>
     </div>

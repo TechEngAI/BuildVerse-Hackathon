@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CivicCard } from "../components/CivicCard";
+import { motion } from "motion/react";
 import {
   FileText, Copy, Send, Check, ShieldAlert
 } from "lucide-react";
@@ -31,7 +32,6 @@ export function FoiGenerator() {
     setTimeout(() => setSent(false), 3000);
   };
 
-  // Legal deadline SVG ring
   const renderDeadlineRing = (days: number, total: number) => {
     const r = 24;
     const circ = 2 * Math.PI * r;
@@ -51,10 +51,10 @@ export function FoiGenerator() {
           strokeDashoffset={offset}
           transform="rotate(-90 30 30)"
         />
-        <text x="30" y="27" textAnchor="middle" fill="#E8B95C" fontSize="12" fontWeight="700" style={{ fontFamily: "'DM Mono', monospace" }}>
+        <text x="30" y="27" textAnchor="middle" fill="#E8B95C" fontSize="12" fontWeight="700" className="font-dm-mono">
           {days}
         </text>
-        <text x="30" y="40" textAnchor="middle" fill="#8B949E" fontSize="7" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <text x="30" y="40" textAnchor="middle" fill="#8B949E" fontSize="7" className="font-inter">
           days
         </text>
       </svg>
@@ -69,7 +69,7 @@ export function FoiGenerator() {
           <FileText size={16} className="text-[#A78BFA]" />
         </div>
         <div>
-          <h3 className="text-[#E8EDF2] text-sm font-semibold" style={{ fontFamily: "'Sora', sans-serif" }}>
+          <h3 className="text-[#E8EDF2] text-sm font-semibold font-sora">
             {t("foiTitle")}
           </h3>
           <p className="text-[#8B949E] text-[10px]">Freedom of Information Act automated requests</p>
@@ -79,7 +79,7 @@ export function FoiGenerator() {
       {!showLetter ? (
         <CivicCard className="p-4 space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-bold block">
+            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-dm-mono font-bold block">
               {t("foiLabel")}
             </label>
             <textarea
@@ -132,7 +132,7 @@ export function FoiGenerator() {
           {/* Legal Deadline Card */}
           <div className="bg-[#E8B95C]/5 border border-[#E8B95C]/35 rounded-xl p-3.5 flex items-center justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-[#E8B95C] text-xs font-bold" style={{ fontFamily: "'Sora', sans-serif" }}>
+              <p className="text-[#E8B95C] text-xs font-bold font-sora">
                 {t("foiDeadline")}
               </p>
               <p className="text-[#8B949E] text-[10px] leading-snug">

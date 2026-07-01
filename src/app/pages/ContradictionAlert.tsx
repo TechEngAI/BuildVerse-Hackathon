@@ -1,201 +1,244 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAppStore, Screen, NavTab } from "../store/useAppStore";
+import { useAppStore } from "../store/useAppStore";
 import { CivicCard } from "../components/CivicCard";
 import { AlertBadge, BadgeLevel } from "../components/AlertBadge";
+import { motion } from "motion/react";
 import {
-  AlertTriangle, Filter, ChevronRight, Share2, FileText, ArrowRight, ShieldCheck, HelpCircle
+  AlertOctagon, Eye, EyeOff, ShieldAlert, ArrowRightLeft, BookOpen, UserCheck, Scale
 } from "lucide-react";
 
-const alerts = [
-  { id: 1, title: "Delta State COVID Fund — 90.2% unspent", location: "Delta State", date: "15 Mar 2024", severity: "critical" as BadgeLevel, summary: "Official: ₦16B disbursed to vulnerable citizens. Beneficiary records: <2% confirmed receipt.", gap: "90.2%", sources: 5 },
-  { id: 2, title: "FCT Ghost Project — Centre Never Built", location: "Abuja, FCT", date: "12 Mar 2024", severity: "critical" as BadgeLevel, summary: "Contractor paid ₦45.2M for community centre. Physical inspection: empty plot with foundation only.", gap: "~90%", sources: 4 },
-  { id: 3, title: "Kano Water Treatment — Funds Diverted", location: "Kano State", date: "10 Mar 2024", severity: "high" as BadgeLevel, summary: "₦180M allocated for treatment upgrade. Citizens report: water still untreated, plant non-operational.", gap: "74%", sources: 3 },
-  { id: 4, title: "Lagos Road Contract Overpayment", location: "Lagos State", date: "8 Mar 2024", severity: "medium" as BadgeLevel, summary: "Road widening paid at 3x market rate. International benchmarks confirm significant cost inflation.", gap: "31%", sources: 3 },
-  { id: 5, title: "Ogun School Feeding Shortfall", location: "Ogun State", date: "6 Mar 2024", severity: "medium" as BadgeLevel, summary: "Government: 100% of pupils fed daily. School records: feeding stopped after 3 months.", gap: "62%", sources: 2 }
-];
+interface Discrepancy {
+  id: number;
+  title: string;
+  category: string;
+  source1: string;
+  source2: string;
+  val1: string;
+  val2: string;
+  severity: BadgeLevel;
+  narrative: string;
+  isAudited: boolean;
+}
 
-const sourceComparisons = [
-  { src: "contraGovt", claim: "₦16.8B disbursed to 2.4M beneficiaries", reliability: "Unverified", status: "warning" },
-  { src: "contraIntl", claim: "World Bank: programme reached 340K verified beneficiaries", reliability: "High", status: "ok" },
-  { src: "contraMedia", claim: "Multiple states report empty distribution centres (Punch, Aug 2022)", reliability: "Moderate", status: "ok" },
-  { src: "contraBench", claim: "Similar programmes in Kenya, Ghana: avg 78% reach rate", reliability: "High", status: "ok" },
-  { src: "contraCitizen", claim: "CivicPulse reports: 12.4% confirmed receipt (n=8,204)", reliability: "Crowdsourced", status: "warning" }
+const contradictionData: Discrepancy[] = [
+  {
+    id: 1,
+    title: "Delta State COVID Fund Allocation",
+    category: "Health Fund",
+    source1: "Delta State Govt",
+    source2: "CivicPulse Audit",
+    val1: "₦12.5B spent",
+    val2: "₦1.2B verified",
+    severity: "critical",
+    narrative: "Federal payout records declare 100% completion of health infrastructure upgrades. Direct citizen verification and procurement logs audit show only 3 of 45 facilities were completed.",
+    isAudited: true
+  },
+  {
+    id: 2,
+    title: "Lagos-Badagry Rail Project Progress",
+    category: "Infrastructure",
+    source1: "Ministry of Transport",
+    source2: "Independent Media",
+    val1: "95% completed",
+    val2: "62% completed",
+    severity: "high",
+    narrative: "Official report claims final signaling and test runs are ongoing. Investigative reports confirm 8km of rail track remain unlaid, with 2 stations abandoned by contractors.",
+    isAudited: false
+  },
+  {
+    id: 3,
+    title: "National Primary Health Borehole Project",
+    category: "Water Supply",
+    source1: "Federal Budget Office",
+    source2: "NGO Reality Index",
+    val1: "200 boreholes built",
+    val2: "14 functional",
+    severity: "critical",
+    narrative: "Budget office reported full disbursement and construction of 200 clean water points. Field audit verified only 14 are operational, with the rest dry or never constructed.",
+    isAudited: true
+  }
 ];
 
 export function ContradictionAlert() {
   const { t } = useTranslation();
-  const { setScreen, setTab } = useAppStore();
-  const [filter, setFilter] = useState<"all" | "critical" | "high" | "medium">("all");
-  const [selectedAlert, setSelectedAlert] = useState<typeof alerts[0] | null>(null);
+  const { activeFilter, setActiveFilter } = useAppStore();
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  const filteredAlerts = alerts.filter((a) => {
-    if (filter === "all") return true;
-    return a.severity === filter;
+  const filteredData = contradictionData.filter((item) => {
+    if (activeFilter === "all") return true;
+    if (activeFilter === "audited") return item.isAudited;
+    return !item.isAudited;
   });
 
-  const getReliabilityStyles = (rel: string) => {
-    switch (rel) {
-      case "High":
-        return "bg-[#1E8A5F]/15 border-[#1E8A5F]/30 text-[#26B07A]";
-      case "Moderate":
-        return "bg-[#3B82F6]/15 border-[#3B82F6]/30 text-[#60A5FA]";
-      case "Crowdsourced":
-        return "bg-[#E8B95C]/15 border-[#E8B95C]/30 text-[#FCD34D]";
-      default:
-        return "bg-[#E3433D]/15 border-[#E3433D]/30 text-[#FF6B65]";
+  const toggleExpand = (id: number) => {
+    setExpandedId((prev) => (prev === id ? null : id));
+  };
+
+  const listContainer = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
     }
   };
 
-  const handleRouteToFoi = () => {
-    setScreen("foi");
-    setTab("reports");
+  const listItem = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0 }
   };
 
   return (
     <div className="p-4 space-y-4 fade-in">
-      {!selectedAlert ? (
-        <div className="space-y-4">
-          {/* Feed Title */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-[#E8EDF2] text-sm font-semibold" style={{ fontFamily: "'Sora', sans-serif" }}>
-                {t("contraTitle")}
-              </h3>
-              <p className="text-[#8B949E] text-[10px]">AI-identified mismatch records</p>
-            </div>
-            <div className="w-8 h-8 bg-white/[0.03] border border-white/[0.06] rounded-lg flex items-center justify-center text-[#8B949E]">
-              <AlertTriangle size={15} />
-            </div>
-          </div>
+      {/* Title Header */}
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 bg-[#E3433D]/15 rounded-lg flex items-center justify-center border border-[#E3433D]/30">
+          <AlertOctagon size={16} className="text-[#E3433D]" />
+        </div>
+        <div>
+          <h3 className="text-[#E8EDF2] text-sm font-semibold font-sora">
+            {t("contraTitle")}
+          </h3>
+          <p className="text-[#8B949E] text-[10px]">{t("contraSubtitle")}</p>
+        </div>
+      </div>
 
-          {/* Filter Bar */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 select-none">
-            <div className="text-[#8B949E] shrink-0 mr-1.5 flex items-center gap-1">
-              <Filter size={11} />
-              <span className="text-[10px] font-bold uppercase tracking-wider font-mono">Filter</span>
-            </div>
-            {(["all", "critical", "high", "medium"] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`px-3 py-1 rounded-full text-[10px] font-bold transition-all border shrink-0 ${
-                  filter === f
-                    ? "bg-[#1E8A5F] text-white border-[#1E8A5F]"
-                    : "bg-[#161B22] border-white/[0.06] text-[#8B949E] hover:text-white"
-                }`}
-                style={{ fontFamily: "'DM Mono', monospace" }}
-              >
-                {f.toUpperCase()}
-              </button>
-            ))}
-          </div>
+      {/* Tabs Filter Selector */}
+      <div className="flex bg-[#1C2128] rounded-xl p-1 border border-white/[0.06]">
+        {[
+          { key: "all", label: "All Alerts" },
+          { key: "audited", label: "Audited Ledger" },
+          { key: "unaudited", label: "Pending Verification" }
+        ].map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveFilter(tab.key as any)}
+            className={`flex-1 text-center py-2 text-[10px] font-bold rounded-lg transition-all font-dm-mono uppercase tracking-wider ${
+              activeFilter === tab.key
+                ? "bg-[#1E8A5F] text-white shadow-sm"
+                : "text-[#8B949E] hover:text-white"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-          {/* Alert List */}
-          <div className="space-y-2.5">
-            {filteredAlerts.map((a) => (
-              <CivicCard
-                key={a.id}
-                severity={a.severity === "critical" ? "critical" : a.severity === "high" ? "warning" : "neutral"}
-                onClick={() => setSelectedAlert(a)}
-                className="p-3"
+      {/* Main Alerts List */}
+      <motion.div 
+        variants={listContainer}
+        initial="hidden"
+        animate="show"
+        className="space-y-3"
+      >
+        {filteredData.length === 0 ? (
+          <div className="text-center py-10 text-[#8B949E] text-xs bg-[#161B22] rounded-xl border border-white/[0.06]">
+            No discrepancies found in this category.
+          </div>
+        ) : (
+          filteredData.map((item) => {
+            const isExpanded = expandedId === item.id;
+            return (
+              <motion.div
+                variants={listItem}
+                key={item.id}
               >
-                <div className="flex justify-between items-start gap-3">
-                  <div className="flex-1 space-y-1 min-w-0">
-                    <p className="text-[#E8EDF2] text-xs font-semibold leading-snug truncate">
-                      {a.title}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[#8B949E] text-[10px] font-mono">{a.location}</span>
-                      <span className="text-white/10 text-[10px]">·</span>
-                      <span className="text-[#E3433D] text-[10px] font-bold tabular-nums" style={{ fontFamily: "'DM Mono', monospace" }}>
-                        {a.gap} Gap
-                      </span>
+                <CivicCard className="p-4 space-y-3" severity={item.severity}>
+                  {/* Header info */}
+                  <div className="flex justify-between items-start gap-2">
+                    <div>
+                      <h4 className="text-[#E8EDF2] text-xs font-semibold leading-snug font-sora">
+                        {item.title}
+                      </h4>
+                      <p className="text-[#8B949E] text-[9px] uppercase tracking-wider font-mono mt-0.5">
+                        {item.category}
+                      </p>
+                    </div>
+                    <AlertBadge level={item.severity} label={t(`severity_${item.severity.substring(0, 3)}`)} />
+                  </div>
+
+                  {/* Side-by-side sources discrepancy comparators */}
+                  <div className="grid grid-cols-2 gap-3.5 bg-white/[0.01] p-3 rounded-xl border border-white/[0.04]">
+                    <div>
+                      <div className="flex items-center gap-1.5 text-[#8B949E] text-[9px] uppercase font-mono tracking-wider">
+                        <BookOpen size={10} />
+                        <span className="truncate">{item.source1}</span>
+                      </div>
+                      <p className="text-[#C4C9D0] text-xs font-bold mt-1 font-dm-mono">{item.val1}</p>
+                    </div>
+
+                    <div className="border-l border-white/[0.06] pl-3.5">
+                      <div className="flex items-center gap-1.5 text-[#E8B95C] text-[9px] uppercase font-mono tracking-wider">
+                        <ArrowRightLeft size={10} />
+                        <span className="truncate">{item.source2}</span>
+                      </div>
+                      <p className="text-[#FF6B65] text-xs font-bold mt-1 font-dm-mono">{item.val2}</p>
                     </div>
                   </div>
-                  <ChevronRight size={15} className="text-[#8B949E] mt-1 shrink-0" />
-                </div>
-              </CivicCard>
-            ))}
-          </div>
-        </div>
-      ) : (
-        /* Detailed Source Comparison view */
-        <div className="space-y-4 slide-up">
-          {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
-            <button
-              onClick={() => setSelectedAlert(null)}
-              className="text-[#8B949E] hover:text-white text-xs font-semibold flex items-center gap-1"
-            >
-              Back to Alert Feed
-            </button>
-            <div className="flex items-center gap-1.5">
-              <Share2 size={13} className="text-[#8B949E] cursor-pointer hover:text-white" />
-            </div>
-          </div>
 
-          {/* Alert Overview */}
-          <CivicCard severity={selectedAlert.severity === "critical" ? "critical" : "neutral"} className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <AlertBadge level={selectedAlert.severity} label={selectedAlert.severity.toUpperCase()} />
-              <span className="text-[#8B949E] text-[9px] font-mono">{selectedAlert.date}</span>
-            </div>
-            <h2 className="text-[#E8EDF2] text-sm font-bold leading-snug" style={{ fontFamily: "'Sora', sans-serif" }}>
-              {selectedAlert.title}
-            </h2>
-            <p className="text-[#8B949E] text-[10px] mt-2 leading-relaxed">
-              {selectedAlert.summary}
-            </p>
-          </CivicCard>
+                  {/* Read narrative details drawer toggle button */}
+                  <div className="flex justify-between items-center pt-2.5 border-t border-white/[0.04] text-[10px]">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider font-dm-mono ${
+                          item.isAudited
+                            ? "bg-[#1E8A5F]/10 border-[#1E8A5F]/35 text-[#26B07A]"
+                            : "bg-[#E8B95C]/10 border-[#E8B95C]/35 text-[#FCD34D]"
+                        }`}
+                      >
+                        {item.isAudited ? "Audited" : "Pending Audit"}
+                      </span>
+                    </div>
 
-          {/* Source Comparison ledger */}
-          <div className="space-y-2.5">
-            <p className="text-[#8B949E] text-[10px] uppercase tracking-widest px-1" style={{ fontFamily: "'DM Mono', monospace" }}>
-              {t("contraDetail")} (5 sources matched)
-            </p>
-
-            <div className="space-y-2">
-              {sourceComparisons.map((c, i) => (
-                <div key={i} className="bg-[#161B22] border border-white/[0.06] rounded-xl p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#E8EDF2] text-[10px] font-bold" style={{ fontFamily: "'Sora', sans-serif" }}>
-                      {t(c.src)}
-                    </span>
-                    <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${getReliabilityStyles(c.reliability)}`} style={{ fontFamily: "'DM Mono', monospace" }}>
-                      {c.reliability}
-                    </span>
+                    <button
+                      onClick={() => toggleExpand(item.id)}
+                      className="flex items-center gap-1 text-[#1E8A5F] hover:underline"
+                    >
+                      {isExpanded ? (
+                        <>
+                          <EyeOff size={11} /> Hide breakdown
+                        </>
+                      ) : (
+                        <>
+                          <Eye size={11} /> View discrepancy analysis
+                        </>
+                      )}
+                    </button>
                   </div>
-                  <p className="text-[#C4C9D0] text-xs leading-relaxed font-medium">
-                    "{c.claim}"
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Legal Audit / FOI CTA */}
-          <CivicCard className="p-4" severity="warning">
-            <div className="flex items-center gap-2 mb-2">
-              <ShieldCheck size={14} className="text-[#E8B95C]" />
-              <p className="text-[#E8B95C] text-[10px] font-bold uppercase tracking-wider" style={{ fontFamily: "'DM Mono', monospace" }}>
-                Official Discrepancy Found
-              </p>
-            </div>
-            <p className="text-[#8B949E] text-[10px] leading-relaxed mb-3.5">
-              The deviation between government declarations and third-party/crowdsourced audits exceeds the standard 15% tolerance. You can demand official audits by sending a legal Freedom of Information request.
-            </p>
-            <button
-              onClick={handleRouteToFoi}
-              className="w-full bg-[#1E8A5F] hover:bg-[#26A674] text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all shadow-md shadow-[#1E8A5F]/15"
-            >
-              <FileText size={14} />
-              Generate Legal FOI Letter
-              <ArrowRight size={12} />
-            </button>
-          </CivicCard>
-        </div>
-      )}
+                  {/* Narrative details drawer */}
+                  {isExpanded && (
+                    <div className="mt-3 pt-3 border-t border-white/[0.04] space-y-3 slide-up">
+                      <p className="text-[#8B949E] text-[10px] leading-relaxed">
+                        {item.narrative}
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-2 text-[9px] text-[#8B949E] font-dm-mono">
+                        <div className="flex items-center gap-1">
+                          <UserCheck size={11} className="text-[#1E8A5F]" />
+                          <span>Auditor Assigned</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Scale size={11} className="text-[#E8B95C]" />
+                          <span>Legal Infraction Check</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CivicCard>
+              </motion.div>
+            );
+          })
+        )}
+      </motion.div>
+
+      {/* Discrepancy warning footer badge info */}
+      <div className="p-3.5 bg-[#1C2128] rounded-xl border border-white/[0.06] flex items-start gap-2.5">
+        <ShieldAlert size={14} className="text-[#E3433D] shrink-0 mt-0.5" />
+        <p className="text-[#8B949E] text-[10px] leading-relaxed">
+          Discrepancy Alerts automatically triggers FOI letters to the respective State MDAs.
+        </p>
+      </div>
     </div>
   );
 }
