@@ -1,0 +1,4 @@
+| Source | URL | Date Accessed | File Saved | Notes |
+|---|---|---|---|---|
+| Budget Office of the Federation — 2025 Appropriation Act as Passed | https://budgetoffice.gov.ng/index.php/2025-appropriation-act-as-passed | 2026-07-02 | appropriation_2025_as_passed.pdf | Real MDA-level allocated_ngn for Presidency (17 agencies), Fed. Min. of Education (259), Fed. Min. of Health (144). Verified: extracted totals match official sector totals exactly. |
+| Budget Office of the Federation — Q1 2025 Budget Implementation Report | https://budgetoffice.gov.ng/index.php/first-quarter-2025-budget-implementation-report | 2026-07-02 | implementation_2025_q1.pdf | National aggregate execution rates only (no MDA breakdown). Used to derive labeled ESTIMATED actual_ngn per Table 3.9: Personnel 82.62%, Overhead 4.44%, Capital 0.74% of prorated quarterly budget. |
