@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useAppStore } from "../store/useAppStore";
+import { useAppStore, apiFetch, parseGps, dataURLtoBlob } from "../store/useAppStore";
 import { CivicCard } from "../components/CivicCard";
 import { MapPin } from "../components/MapPin";
 import { Loader } from "@googlemaps/js-api-loader";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  Map as MapIcon, XCircle, CheckCircle, Camera, Navigation, Check, AlertTriangle, Info
+  Map as MapIcon, XCircle, CheckCircle, Camera, Navigation, Check, AlertTriangle, Info, AlertCircle
 } from "lucide-react";
 
 const mapPins = [
@@ -27,6 +27,22 @@ export function GhostTracker() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [isUsingGoogleMap, setIsUsingGoogleMap] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
+
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [evidenceError, setEvidenceError] = useState("");
+  const [analyzedResult, setAnalyzedResult] = useState<{
+    matched_contract?: {
+      name: string;
+      contractor: string;
+      amount: string;
+      officialStatus: string;
+      actualProgress: string;
+    };
+    contradiction?: {
+      narrative: string;
+      gap: number;
+    };
+  } | null>(null);
 
   const nigeriaPath = "2.5,0 19,2 44,1 77.5,5 98,10 100,40 94,60 86,75 61,85 48,97 28,97 11,90 0,75 0,50 7,30 2.5,0";
 
@@ -87,6 +103,7 @@ export function GhostTracker() {
   const handleTriggerUpload = () => {
     setSubView("upload");
     setPhoto(null);
+    setEvidenceError("");
   };
 
   const handleCapturePhoto = () => {
@@ -96,14 +113,59 @@ export function GhostTracker() {
   const handleSubmitEvidence = async () => {
     if (!selectedPin) return;
     
-    await addIssue(
-      "Ghost Project Verification",
-      `Citizen report on ${selectedPin.name}. Contractor claim: ${selectedPin.officialStatus}. Citizen reality: ${photo ? "Photo evidence supplied." : "Empty plot observed."}`,
-      photo || undefined,
-      "9.0820°N, 7.4130°E"
-    );
+    setEvidenceError("");
+    setEvidenceLoading(true);
 
-    setSubView("uploaded");
+    try {
+      if (isOffline) {
+        // Offline: save report to IndexedDB
+        await addIssue(
+          "Ghost Project Verification",
+          `Citizen report on ${selectedPin.name}. Contractor claim: ${selectedPin.officialStatus}. Citizen reality: ${photo ? "Photo evidence supplied." : "Empty plot observed."}`,
+          photo || undefined,
+          "9.0820°N, 7.4130°E"
+        );
+        setSubView("uploaded");
+        return;
+      }
+
+      // Online: call POST /ghost/analyze-photo
+      const formData = new FormData();
+      const gpsString = "9.0820°N, 7.4130°E";
+      const { lat, lng } = parseGps(gpsString);
+
+      formData.append("lat", lat.toString());
+      formData.append("lng", lng.toString());
+      
+      if (photo) {
+        const blob = dataURLtoBlob(photo);
+        formData.append("file", blob, "evidence.jpg");
+      } else {
+        const emptyBlob = new Blob([""], { type: "image/jpeg" });
+        formData.append("file", emptyBlob, "evidence.jpg");
+      }
+
+      const res = await apiFetch("/ghost/analyze-photo", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Photo/GPS analysis failed.");
+      }
+
+      setAnalyzedResult({
+        matched_contract: data.matched_contract,
+        contradiction: data.contradiction
+      });
+      setSubView("uploaded");
+    } catch (err: any) {
+      console.error(err);
+      setEvidenceError(err.message || "An error occurred during submission.");
+    } finally {
+      setEvidenceLoading(false);
+    }
   };
 
   return (
@@ -149,7 +211,7 @@ export function GhostTracker() {
         )}
       </div>
 
-      {/* Main Details Panel (Scrollable below map) */}
+      {/* Main Details Panel */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <AnimatePresence mode="wait">
           {selectedPin ? (
@@ -257,6 +319,13 @@ export function GhostTracker() {
 
               {subView === "upload" && (
                 <div className="space-y-4">
+                  {evidenceError && (
+                    <div className="bg-[#E3433D]/10 border border-[#E3433D]/30 text-[#FF6B65] text-xs rounded-xl p-3 flex items-start gap-2">
+                      <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                      <span>{evidenceError}</span>
+                    </div>
+                  )}
+
                   <CivicCard className="p-4">
                     <p className="text-[#E8EDF2] text-xs font-semibold mb-3">{t("ghostPhoto")}</p>
                     
@@ -269,9 +338,13 @@ export function GhostTracker() {
                         <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                           <CheckCircle size={28} className="text-[#1E8A5F] drop-shadow-md" />
                         </div>
-                        <span className="absolute bottom-2.5 left-2.5 bg-[#0E1116]/80 text-[#8B949E] text-[9px] px-2 py-0.5 rounded-full font-mono border border-white/[0.05]">
-                          120KB · JPG
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setPhoto(null)}
+                          className="absolute top-2 right-2 bg-[#E3433D] text-white px-2 py-0.5 rounded-md text-[9px]"
+                        >
+                          Clear
+                        </button>
                       </div>
                     ) : (
                       <button
@@ -308,11 +381,11 @@ export function GhostTracker() {
                     </button>
                     <button
                       onClick={handleSubmitEvidence}
-                      disabled={!photo}
+                      disabled={!photo || evidenceLoading}
                       className="flex-1 bg-[#1E8A5F] disabled:opacity-40 disabled:pointer-events-none text-white py-3 rounded-xl text-sm font-semibold active:opacity-80 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-[#1E8A5F]/10"
                     >
                       <CheckCircle size={16} />
-                      {t("submit")}
+                      {evidenceLoading ? "Analyzing photo..." : t("submit")}
                     </button>
                   </div>
                 </div>
@@ -325,14 +398,32 @@ export function GhostTracker() {
                   </div>
                   <div>
                     <h4 className="text-[#E8EDF2] text-sm font-semibold">{t("ghostUploaded")}</h4>
-                    <p className="text-[#8B949E] text-[10px] mt-1 leading-relaxed">
+                    
+                    {analyzedResult?.contradiction && (
+                      <div className="mt-4 p-3.5 bg-[#E3433D]/10 border border-[#E3433D]/30 rounded-xl text-left space-y-2">
+                        <p className="text-[#FF6B65] text-xs font-bold font-sora">
+                          Contradiction Identified!
+                        </p>
+                        <p className="text-[#8B949E] text-[10px] leading-relaxed">
+                          {analyzedResult.contradiction.narrative}
+                        </p>
+                        <p className="text-[#8B949E] text-[10px] font-dm-mono">
+                          Deviation Gap: {analyzedResult.contradiction.gap}%
+                        </p>
+                      </div>
+                    )}
+
+                    <p className="text-[#8B949E] text-[10px] mt-3 leading-relaxed">
                       {isOffline
                         ? t("reportOffline")
-                        : "Evidence pushed successfully. Our audits will cross-reference this with the official contractor ledger."}
+                        : "Verification completed successfully. This report has been linked to the contract records."}
                     </p>
                   </div>
                   <button
-                    onClick={() => setSubView("map")}
+                    onClick={() => {
+                      setSubView("map");
+                      setAnalyzedResult(null);
+                    }}
                     className="w-full bg-[#1C2128] border border-white/[0.07] text-[#E8EDF2] py-2.5 rounded-xl text-xs font-semibold"
                   >
                     Return to Project Map

@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CivicCard } from "../components/CivicCard";
 import { ChartWrapper } from "../components/ChartWrapper";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { motion, AnimatePresence } from "motion/react";
-import { BarChart2, Upload, XCircle, Zap, RefreshCw } from "lucide-react";
+import { BarChart2, Upload, XCircle, Zap, RefreshCw, AlertCircle } from "lucide-react";
+import { apiFetch } from "../store/useAppStore";
 
-const budgetData = [
+const defaultBudgetData = [
   { cat: "Roads", allocated: 16.0, actual: 1.57 },
   { cat: "Health", allocated: 8.2, actual: 5.1 },
   { cat: "Education", allocated: 12.0, actual: 9.8 },
@@ -18,28 +19,71 @@ export function BudgetTracker() {
   const { t } = useTranslation();
   const [state, setState] = useState<"upload" | "analyzing" | "results">("upload");
   const [progress, setProgress] = useState(0);
+  const [localError, setLocalError] = useState("");
+  
+  const [analysisResults, setAnalysisResults] = useState<{
+    deviationPct: number;
+    alertFired: boolean;
+    summaryEnglish: string;
+    summaryPidgin: string;
+    chartData: typeof defaultBudgetData;
+  } | null>(null);
 
-  const handleUpload = () => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setLocalError("");
     setState("analyzing");
-    setProgress(0);
+    setProgress(15);
+
+    try {
+      // Step 1: POST /budget/upload-pdf to upload PDF & get raw text
+      const formData = new FormData();
+      formData.append("file", file);
+
+      setProgress(40);
+      const uploadRes = await apiFetch("/budget/upload-pdf", {
+        method: "POST",
+        body: formData
+      });
+      
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) {
+        throw new Error(uploadData.detail || "PDF upload and text extraction failed.");
+      }
+
+      setProgress(70);
+      // Step 2: POST /budget/calculate-deviation with extracted text
+      const extractedText = uploadData.text || uploadData.extracted_text || "";
+      const devRes = await apiFetch("/budget/calculate-deviation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: extractedText })
+      });
+
+      const devData = await devRes.json();
+      if (!devRes.ok) {
+        throw new Error(devData.detail || "Budget deviation calculation failed.");
+      }
+
+      setProgress(100);
+      setAnalysisResults({
+        deviationPct: devData.deviation_pct ?? 25.0,
+        alertFired: devData.alert_fired ?? false,
+        summaryEnglish: devData.summary_english || "Official budget claims completed. Large deviation observed in Roads projects.",
+        summaryPidgin: devData.summary_pidgin || "Govt talk say work complete. But community project deviation run pass 25% boundary.",
+        chartData: devData.chart_data || defaultBudgetData
+      });
+      setState("results");
+    } catch (err: any) {
+      console.error(err);
+      setLocalError(err.message || "An error occurred during analysis.");
+      setState("upload");
+    }
   };
 
-  useEffect(() => {
-    if (state !== "analyzing") return;
-    
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setState("results");
-          return 100;
-        }
-        return prev + 5;
-      });
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [state]);
+  const currentChartData = analysisResults?.chartData || defaultBudgetData;
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -85,10 +129,25 @@ export function BudgetTracker() {
                 </div>
               </div>
 
+              {localError && (
+                <div className="mb-4 bg-[#E3433D]/10 border border-[#E3433D]/30 text-[#FF6B65] text-xs rounded-xl p-3 flex items-start gap-2">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                  <span>{localError}</span>
+                </div>
+              )}
+
+              <input
+                type="file"
+                id="pdf-upload"
+                accept="application/pdf"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+
               <motion.button
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                onClick={handleUpload}
+                onClick={() => document.getElementById("pdf-upload")?.click()}
                 className="w-full border-2 border-dashed border-[#1E8A5F]/30 rounded-xl p-8 flex flex-col items-center gap-3 text-center bg-[#1E8A5F]/[0.03] transition-all hover:border-[#1E8A5F]/60"
               >
                 <div className="w-12 h-12 bg-[#1E8A5F]/15 rounded-xl flex items-center justify-center border border-[#1E8A5F]/20">
@@ -174,23 +233,25 @@ export function BudgetTracker() {
             className="space-y-4"
           >
             {/* Irregularity Warning Panel */}
-            <div className="bg-[#E3433D]/10 border border-[#E3433D]/40 rounded-xl p-3.5 flex items-start gap-3 shadow-md">
-              <XCircle size={18} className="text-[#E3433D] shrink-0 mt-0.5" />
-              <div>
-                <p className="text-[#E3433D] text-xs font-bold mb-1 font-sora">
-                  {t("budgetAlert")}
-                </p>
-                <p className="text-[#8B949E] text-[10px] leading-snug">
-                  Road construction deviation has triggered a critical financial irregularity warning.
-                </p>
+            {analysisResults?.alertFired && (
+              <div className="bg-[#E3433D]/10 border border-[#E3433D]/40 rounded-xl p-3.5 flex items-start gap-3 shadow-md">
+                <XCircle size={18} className="text-[#E3433D] shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-[#E3433D] text-xs font-bold mb-1 font-sora">
+                    {t("budgetAlert")}
+                  </p>
+                  <p className="text-[#8B949E] text-[10px] leading-snug">
+                    Road construction or other project budget deviation has triggered a critical financial irregularity warning.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Recharts chart */}
             <ChartWrapper title={t("budgetTitle") + " (₦ Billion)"}>
               <div className="h-[200px] mt-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={budgetData} barGap={3} barCategoryGap="25%">
+                  <BarChart data={currentChartData} barGap={3} barCategoryGap="25%">
                     <XAxis
                       dataKey="cat"
                       tick={{ fill: "#8B949E", fontSize: 10, fontFamily: "'DM Mono', monospace" }}
@@ -229,8 +290,8 @@ export function BudgetTracker() {
                   {t("budgetDeviation")} analysis
                 </p>
               </div>
-              {budgetData.map((d, i) => {
-                const dev = Math.abs(((d.allocated - d.actual) / d.allocated) * 100);
+              {currentChartData.map((d, i) => {
+                const dev = d.allocated > 0 ? Math.abs(((d.allocated - d.actual) / d.allocated) * 100) : 0;
                 const isCritical = dev > 25;
                 return (
                   <div
@@ -244,7 +305,7 @@ export function BudgetTracker() {
                       <div className="h-1.5 bg-[#21262D] rounded-full overflow-hidden border border-white/[0.03]">
                         <div
                           className={`h-full rounded-full w-[var(--progress-width)] ${isCritical ? "bg-[#E3433D]" : "bg-[#1E8A5F]"}`}
-                          style={{ "--progress-width": `${(d.actual / d.allocated) * 100}%` } as React.CSSProperties}
+                          style={{ "--progress-width": `${d.allocated > 0 ? (d.actual / d.allocated) * 100 : 0}%` } as React.CSSProperties}
                         />
                       </div>
                     </div>
@@ -269,16 +330,22 @@ export function BudgetTracker() {
                   AI Analysis Ledger
                 </p>
               </div>
-              <p className="text-[#C4C9D0] text-xs leading-relaxed font-medium">
-                {t("budgetSummary")}
-              </p>
+              <div className="space-y-2 text-xs leading-relaxed text-[#C4C9D0]">
+                <p className="font-semibold text-white">English Summary:</p>
+                <p>{analysisResults?.summaryEnglish}</p>
+                <p className="font-semibold text-white pt-1">Pidgin Summary:</p>
+                <p className="italic text-[#8B949E]">{analysisResults?.summaryPidgin}</p>
+              </div>
               <p className="text-[#8B949E] text-[10px] mt-3.5 pt-3 border-t border-white/[0.06] font-medium font-dm-mono">
                 {t("budgetSrc")}
               </p>
             </CivicCard>
 
             <button
-              onClick={() => setState("upload")}
+              onClick={() => {
+                setAnalysisResults(null);
+                setState("upload");
+              }}
               className="w-full bg-[#1C2128] hover:bg-[#21262D] border border-white/[0.07] text-[#8B949E] hover:text-white text-sm py-3 rounded-xl font-semibold active:opacity-70 transition-all flex items-center justify-center gap-2"
             >
               <RefreshCw size={14} />

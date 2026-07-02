@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useAppStore, Language, Screen, NavTab } from "../store/useAppStore";
 import {
-  Home, BarChart2, Map, FileText, User, Bell, Layers, Wifi, WifiOff, ChevronLeft
+  Home, BarChart2, Map, FileText, User, Bell, Layers, Wifi, WifiOff, ChevronLeft, LogOut
 } from "lucide-react";
 
 interface NavBarProps {
@@ -12,7 +12,7 @@ interface NavBarProps {
 export function TopBar({ onBack, showBack }: NavBarProps) {
   const { t } = useTranslation();
   const {
-    lang, setLang, screen, setScreen, isOffline, setIsOffline
+    lang, setLang, screen, setScreen, isOffline, setIsOffline, logout
   } = useAppStore();
 
   const languages: { key: Language; label: string }[] = [
@@ -35,13 +35,11 @@ export function TopBar({ onBack, showBack }: NavBarProps) {
           </button>
         ) : (
           <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => setScreen("home")}>
-            {/* Embedded logo.jpg properly */}
             <img 
               src="/logo.jpg" 
               className="w-6 h-6 rounded-md object-cover border border-[#1E8A5F]/40" 
               alt="CivicPulse Logo"
               onError={(e) => {
-                // Fallback icon placeholder if image fails to load
                 e.currentTarget.style.display = 'none';
               }}
             />
@@ -94,8 +92,16 @@ export function TopBar({ onBack, showBack }: NavBarProps) {
 
         <button className="p-1 text-[#8B949E] hover:text-white transition-colors relative">
           <Bell size={15} />
-          {/* Subtle notification indicator */}
           <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-[#E3433D] rounded-full" />
+        </button>
+
+        {/* Logout Button */}
+        <button
+          onClick={logout}
+          className="p-1 text-[#8B949E] hover:text-[#E3433D] transition-colors"
+          title="Log Out"
+        >
+          <LogOut size={15} />
         </button>
       </div>
     </div>

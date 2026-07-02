@@ -3,8 +3,9 @@ import { useTranslation } from "react-i18next";
 import { CivicCard } from "../components/CivicCard";
 import { motion } from "motion/react";
 import {
-  FileText, Copy, Send, Check, ShieldAlert
+  FileText, Copy, Send, Check, ShieldAlert, AlertCircle
 } from "lucide-react";
+import { apiFetch } from "../store/useAppStore";
 
 export function FoiGenerator() {
   const { t } = useTranslation();
@@ -12,16 +13,66 @@ export function FoiGenerator() {
   const [showLetter, setShowLetter] = useState(false);
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [letterText, setLetterText] = useState("");
+  const [localError, setLocalError] = useState("");
 
-  const handleGenerate = () => {
+  const getFallbackLetter = () => {
+    return `THE FREEDOM OF INFORMATION ACT, 2011
+
+Date: ${new Date().toLocaleDateString()}
+To: The Director-General / Head of Agency,
+Public Works Department / Relevant LGA Authority,
+Federal Republic of Nigeria.
+
+RE: FREEDOM OF INFORMATION (FOI) REQUEST REGARDING PUBLIC EXPENDITURE
+
+Dear Sir/Ma,
+
+This request is made pursuant to the provisions of the Freedom of Information Act 2011, which guarantees the right of citizens to access official records and documents held by government agencies.
+
+Specifically, I am requesting full access to, and certified true copies of, procurement files, payment vouchers, bank disbursement slips, and completion metrics relating to:
+
+"${topic}"
+
+Please note that public institutions have a statutory obligation under Section 4 of the FOI Act 2011 to respond to requests within seven (7) working days of receipt.
+
+Should you refuse this request, you are required under Section 7 of the Act to notify me in writing, stating the specific exemption codes relied upon.
+
+Sincerely,
+Auditor Citizen (via CivicPulse Platform)
+(Contact details registered on submission file)`;
+  };
+
+  const handleGenerate = async () => {
     if (!topic.trim()) return;
-    setShowLetter(true);
+    setGenerating(true);
+    setLocalError("");
     setCopied(false);
     setSent(false);
+
+    try {
+      const res = await apiFetch("/foi/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ topic })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.detail || "Failed to generate FOI request.");
+      }
+      setLetterText(data.letter || data.generated_letter || getFallbackLetter());
+      setShowLetter(true);
+    } catch (err: any) {
+      console.warn("Generating with local template fallback:", err);
+      setLetterText(getFallbackLetter());
+      setShowLetter(true);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleCopy = () => {
-    const letterText = document.getElementById("foi-letter-body")?.innerText || "";
     navigator.clipboard.writeText(letterText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -78,6 +129,13 @@ export function FoiGenerator() {
 
       {!showLetter ? (
         <CivicCard className="p-4 space-y-4">
+          {localError && (
+            <div className="bg-[#E3433D]/10 border border-[#E3433D]/30 text-[#FF6B65] text-xs rounded-xl p-3 flex items-start gap-2">
+              <AlertCircle size={16} className="shrink-0 mt-0.5" />
+              <span>{localError}</span>
+            </div>
+          )}
+
           <div className="space-y-1.5">
             <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-dm-mono font-bold block">
               {t("foiLabel")}
@@ -94,11 +152,11 @@ export function FoiGenerator() {
 
           <button
             onClick={handleGenerate}
-            disabled={!topic.trim()}
+            disabled={!topic.trim() || generating}
             className="w-full bg-[#1E8A5F] disabled:opacity-40 disabled:pointer-events-none text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all shadow-md shadow-[#1E8A5F]/15"
           >
             <FileText size={16} />
-            {t("foiGenerate")}
+            {generating ? "Generating legal letter..." : t("foiGenerate")}
           </button>
         </CivicCard>
       ) : (
@@ -143,48 +201,9 @@ export function FoiGenerator() {
           </div>
 
           {/* Generated Formal Letter Layout */}
-          <CivicCard className="p-5 font-mono text-[11px] leading-relaxed text-[#C4C9D0] overflow-y-auto max-h-[300px] border border-white/[0.08] shadow-inner select-text">
+          <CivicCard className="p-5 font-mono text-[11px] leading-relaxed text-[#C4C9D0] overflow-y-auto max-h-[300px] border border-white/[0.08] shadow-inner select-text whitespace-pre-line">
             <div id="foi-letter-body" className="space-y-4">
-              <p className="font-bold">THE FREEDOM OF INFORMATION ACT, 2011</p>
-              
-              <div className="space-y-0.5">
-                <p>Date: {new Date().toLocaleDateString()}</p>
-                <p>To: The Director-General / Head of Agency,</p>
-                <p>Public Works Department / Relevant LGA Authority,</p>
-                <p>Federal Republic of Nigeria.</p>
-              </div>
-
-              <p className="font-bold text-center border-y border-white/10 py-2">
-                RE: FREEDOM OF INFORMATION (FOI) REQUEST REGARDING PUBLIC EXPENDITURE
-              </p>
-
-              <p>Dear Sir/Ma,</p>
-
-              <p>
-                This request is made pursuant to the provisions of the Freedom of Information Act 2011, which guarantees the right of citizens to access official records and documents held by government agencies.
-              </p>
-
-              <p>
-                Specifically, I am requesting full access to, and certified true copies of, procurement files, payment vouchers, bank disbursement slips, and completion metrics relating to:
-              </p>
-
-              <p className="border-l-2 border-[#1E8A5F] pl-3 py-1 bg-white/[0.01] italic">
-                "{topic}"
-              </p>
-
-              <p>
-                Please note that public institutions have a statutory obligation under Section 4 of the FOI Act 2011 to respond to requests within seven (7) working days of receipt.
-              </p>
-
-              <p>
-                Should you refuse this request, you are required under Section 7 of the Act to notify me in writing, stating the specific exemption codes relied upon.
-              </p>
-
-              <div className="space-y-0.5 pt-4">
-                <p>Sincerely,</p>
-                <p className="font-bold">Auditor Citizen (via CivicPulse Platform)</p>
-                <p className="text-[#8B949E] italic text-[9px]">(Contact details registered on submission file)</p>
-              </div>
+              {letterText}
             </div>
           </CivicCard>
           

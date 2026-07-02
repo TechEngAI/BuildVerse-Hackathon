@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useAppStore, Screen } from "./store/useAppStore";
+import { useAppStore } from "./store/useAppStore";
 import { TopBar, BottomNav } from "./components/NavBar";
 import { Dashboard } from "./pages/Dashboard";
 import { BudgetTracker } from "./pages/BudgetTracker";
@@ -11,6 +11,7 @@ import { IssueReporter } from "./pages/IssueReporter";
 import { FoiGenerator } from "./pages/FoiGenerator";
 import { PoliticianProfile } from "./pages/PoliticianProfile";
 import { ComponentLibrary } from "./pages/ComponentLibrary";
+import { AuthScreen } from "./pages/AuthScreen";
 import { RefreshCw, WifiOff } from "lucide-react";
 
 export default function App() {
@@ -22,7 +23,8 @@ export default function App() {
     setIsOffline,
     isSyncing,
     syncOfflineQueue,
-    loadOfflineData
+    loadOfflineData,
+    accessToken
   } = useAppStore();
 
   // Listen to network status events and initialize IndexedDB offline store on mount
@@ -45,6 +47,15 @@ export default function App() {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
+
+  // Auth gating: Lock application views if not logged in
+  if (!accessToken) {
+    return (
+      <div className="flex flex-col min-h-screen max-w-[375px] mx-auto bg-[#0E1116] border-x border-white/[0.06] shadow-2xl relative">
+        <AuthScreen />
+      </div>
+    );
+  }
 
   const renderActiveScreen = () => {
     switch (screen) {
@@ -72,7 +83,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen max-w-[375px] mx-auto bg-[#0E1116] border-x border-white/[0.06] shadow-2xl relative">
+    <div className="flex flex-col min-h-screen max-w-[375px] mx-auto bg-[#0E1116] border-x border-white/[0.06] shadow-2xl relative animate-fade-in">
       {/* Top Header Bar */}
       <TopBar 
         showBack={screen !== "home"} 

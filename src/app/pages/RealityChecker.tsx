@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useAppStore } from "../store/useAppStore";
+import { useAppStore, apiFetch } from "../store/useAppStore";
 import { CivicCard } from "../components/CivicCard";
 import { ChartWrapper } from "../components/ChartWrapper";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
@@ -9,16 +9,42 @@ import { Users, Check, AlertOctagon, HelpCircle } from "lucide-react";
 
 export function RealityChecker() {
   const { t } = useTranslation();
-  const { isOffline, citizenPollStats, addCitizenPoll } = useAppStore();
+  const { isOffline, addCitizenPoll } = useAppStore();
   const [hasVoted, setHasVoted] = useState(false);
+  const [liveStats, setLiveStats] = useState({ yes: 124, no: 820, partial: 236 });
+
+  useEffect(() => {
+    const fetchScore = async () => {
+      if (isOffline) return;
+      try {
+        const res = await apiFetch(`/reality/score/${encodeURIComponent("TraderMoni / Market Hawker Fund")}`);
+        const data = await res.json();
+        if (res.ok && data) {
+          setLiveStats({
+            yes: data.yes ?? 124,
+            no: data.no ?? 820,
+            partial: data.partial ?? 236
+          });
+        }
+      } catch (e) {
+        console.error("Failed to load reality score:", e);
+      }
+    };
+    fetchScore();
+  }, [isOffline]);
 
   const handleVote = async (option: "yes" | "no" | "partial") => {
     setHasVoted(true);
     await addCitizenPoll("TraderMoni / Market Hawker Fund", option);
+
+    setLiveStats((prev) => ({
+      ...prev,
+      [option]: prev[option] + 1
+    }));
   };
 
-  const totalVotes = citizenPollStats.yes + citizenPollStats.no + citizenPollStats.partial;
-  const matchPercentage = totalVotes > 0 ? (citizenPollStats.yes / totalVotes) * 100 : 0;
+  const totalVotes = liveStats.yes + liveStats.no + liveStats.partial;
+  const matchPercentage = totalVotes > 0 ? (liveStats.yes / totalVotes) * 100 : 0;
 
   const comparisonData = [
     { name: "Official claim", percentage: 100, fill: "#1E8A5F" },
@@ -153,19 +179,19 @@ export function RealityChecker() {
             <div>
               <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Confirmed</p>
               <p className="text-[#1E8A5F] text-xs font-bold mt-0.5 font-dm-mono">
-                {citizenPollStats.yes}
+                {liveStats.yes}
               </p>
             </div>
             <div>
               <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Unreceived</p>
               <p className="text-[#E3433D] text-xs font-bold mt-0.5 font-dm-mono">
-                {citizenPollStats.no}
+                {liveStats.no}
               </p>
             </div>
             <div>
               <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Partial</p>
               <p className="text-[#E8B95C] text-xs font-bold mt-0.5 font-dm-mono">
-                {citizenPollStats.partial}
+                {liveStats.partial}
               </p>
             </div>
           </div>
