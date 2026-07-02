@@ -1,0 +1,6 @@
+﻿.env
+*.pyc
+__pycache__/
+
+# Local service account keys
+app/*.json
