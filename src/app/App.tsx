@@ -11,7 +11,7 @@ import { IssueReporter } from "./pages/IssueReporter";
 import { FoiGenerator } from "./pages/FoiGenerator";
 import { PoliticianProfile } from "./pages/PoliticianProfile";
 import { ComponentLibrary } from "./pages/ComponentLibrary";
-import { AuthScreen } from "./pages/AuthScreen";
+import { LandingPage } from "./pages/LandingPage";
 import { RefreshCw, WifiOff } from "lucide-react";
 
 export default function App() {
@@ -52,7 +52,7 @@ export default function App() {
   if (!accessToken) {
     return (
       <div className="flex flex-col min-h-screen max-w-[375px] mx-auto bg-[#0E1116] border-x border-white/[0.06] shadow-2xl relative">
-        <AuthScreen />
+        <LandingPage />
       </div>
     );
   }
