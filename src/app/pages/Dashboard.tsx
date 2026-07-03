@@ -73,6 +73,15 @@ export function Dashboard() {
       tab: "profile" as NavTab,
       textColor: "text-[#E8B95C]",
       bgColor: "bg-[#E8B95C]/15"
+    },
+    {
+      icon: Shield,
+      labelKey: "AI Audit Labs",
+      subKey: "50 Premium Features",
+      screen: "labs" as Screen,
+      tab: "profile" as NavTab,
+      textColor: "text-[#1E8A5F]",
+      bgColor: "bg-[#1E8A5F]/15"
     }
   ];
 

@@ -3,7 +3,7 @@ import i18n from "../../i18n";
 import { db, OfflineIssue, CitizenReport } from "../lib/db";
 
 export type Language = "pidgin" | "english" | "yoruba" | "hausa";
-export type Screen = "home" | "budget" | "ghost" | "social" | "contradiction" | "foi" | "reporter" | "profile" | "components";
+export type Screen = "home" | "budget" | "ghost" | "social" | "contradiction" | "foi" | "reporter" | "profile" | "components" | "labs";
 export type NavTab = "home" | "budget" | "map" | "reports" | "profile";
 
 export const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";

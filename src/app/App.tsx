@@ -12,6 +12,7 @@ import { FoiGenerator } from "./pages/FoiGenerator";
 import { PoliticianProfile } from "./pages/PoliticianProfile";
 import { ComponentLibrary } from "./pages/ComponentLibrary";
 import { LandingPage } from "./pages/LandingPage";
+import { AuditLabs } from "./pages/AuditLabs";
 import { RefreshCw, WifiOff } from "lucide-react";
 
 export default function App() {
@@ -77,6 +78,8 @@ export default function App() {
         return <PoliticianProfile />;
       case "components":
         return <ComponentLibrary />;
+      case "labs":
+        return <AuditLabs />;
       default:
         return <Dashboard />;
     }
