@@ -14,8 +14,7 @@ from app.routers import budget, foi, ghost, reality
 configure_logging()
 logger = logging.getLogger(__name__)
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 class HealthResponse(BaseModel):
     status: str
