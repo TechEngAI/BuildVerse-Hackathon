@@ -92,3 +92,9 @@ async def health_check() -> HealthResponse:
         overall_status = "degraded"
 
     return HealthResponse(status=overall_status, supabase=supabase_status, redis=redis_status)
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    # Railway provides the port via an environment variable
+    port = int(os.getenv("PORT", 8080))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
