@@ -1,0 +1,16 @@
+﻿# Migrated from Claude to Grok (xAI) — OpenAI-compatible API
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+supabase==2.11.0
+gotrue==2.11.0
+openai==1.93.0
+httpx==0.28.1
+pandas==2.2.3
+numpy==2.2.1
+requests==2.32.3
+pdfplumber==0.11.5
+Pillow==12.2.0
+python-dotenv==1.0.1
+python-multipart==0.0.20
+pydantic[email]==2.10.4
+redis==5.1.1
