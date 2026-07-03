@@ -174,8 +174,11 @@ Auditor Citizen (via CivicPulse Platform)
               Project Category
             </label>
             <select
+              id="category-select"
               value={category}
               onChange={(e) => setCategory(e.target.value as FoiCategory)}
+              title="Project Category"
+              aria-label="Project Category"
               className="w-full bg-[#1C2128] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F]"
             >
               <option value="default">Default / General Audit</option>

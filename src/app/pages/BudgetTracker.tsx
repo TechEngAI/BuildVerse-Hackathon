@@ -181,49 +181,69 @@ export function BudgetTracker() {
               {/* Param Inputs Grid */}
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <div className="col-span-2 space-y-1">
-                  <label className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">Ministry / Agency</label>
+                  <label htmlFor="ministry-input" className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">Ministry / Agency</label>
                   <input
+                    id="ministry-input"
                     type="text"
                     value={ministry}
                     onChange={(e) => setMinistry(e.target.value)}
+                    placeholder="E.g., Ministry of Health"
+                    title="Ministry or Agency"
+                    aria-label="Ministry or Agency"
                     className="w-full bg-[#0E1116] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F] placeholder-white/20 transition-colors"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">State</label>
+                  <label htmlFor="state-input" className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">State</label>
                   <input
+                    id="state-input"
                     type="text"
                     value={stateName}
                     onChange={(e) => setStateName(e.target.value)}
+                    placeholder="E.g., Delta"
+                    title="State"
+                    aria-label="State Name"
                     className="w-full bg-[#0E1116] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F] placeholder-white/20 transition-colors"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">Year</label>
+                  <label htmlFor="year-input" className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">Year</label>
                   <input
+                    id="year-input"
                     type="number"
                     value={year}
                     onChange={(e) => setYear(parseInt(e.target.value) || 2020)}
+                    placeholder="2020"
+                    title="Year"
+                    aria-label="Year"
                     className="w-full bg-[#0E1116] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F] placeholder-white/20 transition-colors"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">Allocated (₦ Billion)</label>
+                  <label htmlFor="allocated-input" className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">Allocated (₦ Billion)</label>
                   <input
+                    id="allocated-input"
                     type="number"
                     step="0.01"
                     value={allocatedBillion}
                     onChange={(e) => setAllocatedBillion(parseFloat(e.target.value) || 0)}
+                    placeholder="0.0"
+                    title="Allocated Amount"
+                    aria-label="Allocated in Billion Naira"
                     className="w-full bg-[#0E1116] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F] placeholder-white/20 transition-colors"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">Actual Spent (₦ Billion)</label>
+                  <label htmlFor="spent-input" className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">Actual Spent (₦ Billion)</label>
                   <input
+                    id="spent-input"
                     type="number"
                     step="0.01"
                     value={actualBillion}
                     onChange={(e) => setActualBillion(parseFloat(e.target.value) || 0)}
+                    placeholder="0.0"
+                    title="Actual Spent Amount"
+                    aria-label="Actual Spent in Billion Naira"
                     className="w-full bg-[#0E1116] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F] placeholder-white/20 transition-colors"
                   />
                 </div>
@@ -235,6 +255,8 @@ export function BudgetTracker() {
                 accept="application/pdf"
                 className="hidden"
                 onChange={handleFileChange}
+                title="Upload Budget PDF"
+                aria-label="Upload Budget PDF"
               />
 
               <motion.button

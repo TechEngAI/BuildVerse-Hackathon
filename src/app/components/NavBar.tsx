@@ -96,12 +96,17 @@ export function TopBar({ onBack, showBack }: NavBarProps) {
             onClick={triggerInstall}
             className="p-1 text-[#E8B95C] hover:text-[#26B07A] transition-colors"
             title="Install Mobile App"
+            aria-label="Install Mobile App"
           >
             <Download size={15} className="animate-bounce" />
           </button>
         )}
 
-        <button className="p-1 text-[#8B949E] hover:text-white transition-colors relative">
+        <button 
+          className="p-1 text-[#8B949E] hover:text-white transition-colors relative"
+          title="Notifications"
+          aria-label="Notifications"
+        >
           <Bell size={15} />
           <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-[#E3433D] rounded-full" />
         </button>
@@ -111,6 +116,7 @@ export function TopBar({ onBack, showBack }: NavBarProps) {
           onClick={logout}
           className="p-1 text-[#8B949E] hover:text-[#E3433D] transition-colors"
           title="Log Out"
+          aria-label="Log Out"
         >
           <LogOut size={15} />
         </button>
