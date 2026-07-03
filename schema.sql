@@ -37,14 +37,20 @@ create table if not exists public.budget_records (
     ministry text not null,
     state text,
     year int not null,
+    line_item text,
     allocated_ngn numeric not null,
     actual_ngn numeric not null,
     deviation_pct numeric not null,
     alert_fired boolean not null,
+    alert_severity text not null default 'none',
+    sources_json jsonb not null default '{}'::jsonb,
     ai_summary_en text,
     ai_summary_pidgin text,
     created_at timestamptz not null default now()
 );
+
+-- Deliberately not carrying over budget_records.lga from the deprecated data migration:
+-- the app's budget endpoint does not read it, and the current source CSV only supplied placeholders.
 
 alter table public.profiles enable row level security;
 alter table public.budget_records enable row level security;
@@ -97,9 +103,13 @@ create table if not exists public.contracts (
     lga text not null,
     state text not null,
     official_status text not null,
+    citizen_verified_status text not null default 'unverified',
     photo_evidence_url text,
     created_at timestamptz not null default now()
 );
+
+-- Deliberately not carrying over contracts.contractor_reg_number from the deprecated data migration:
+-- no endpoint or UI logic consumes it, and the available seed source only contained placeholders.
 
 create table if not exists public.citizen_reports (
     id uuid primary key default gen_random_uuid(),

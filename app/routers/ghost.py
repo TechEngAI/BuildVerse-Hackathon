@@ -187,6 +187,16 @@ def analyze_project_photo(contents: bytes, content_type: str) -> VisionAnalysis:
     return _parse_vision_analysis(raw_text)
 
 
+def build_no_photo_analysis(description: str | None) -> VisionAnalysis:
+    detail = description.strip() if description and description.strip() else "No citizen observation text supplied."
+    return VisionAnalysis(
+        scene_description=f"GPS-only citizen report submitted without photo evidence. {detail}",
+        infrastructure_type="unknown",
+        completion_pct=0,
+        visible_issues=["No photo evidence attached; visual verification pending."],
+    )
+
+
 def _contract_from_row(row: dict[str, Any] | None) -> ContractResponse | None:
     if not row:
         return None
@@ -298,34 +308,39 @@ async def _insert_citizen_report(
 async def analyze_photo(
     lat: float = Form(..., ge=-90, le=90),
     lng: float = Form(..., ge=-180, le=180),
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(default=None),
     description: str | None = Form(default=None),
     authorization: str = Header(...),
     current_user: CurrentUser = Depends(get_current_user),
 ) -> AnalyzePhotoResponse:
-    """Analyze a project photo, match it to nearby contracts, and store a citizen report."""
-    try:
-        contents = await file.read()
-    except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Unable to read uploaded image file.",
-        ) from exc
+    """Analyze an optional project photo, match GPS to nearby contracts, and store a citizen report."""
+    has_photo = file is not None
+    if has_photo:
+        try:
+            contents = await file.read()
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unable to read uploaded image file.",
+            ) from exc
 
-    content_type = _validate_image(contents, file.content_type)
-    cache_key = (
-        "ghost-vision:"
-        + hashlib.sha256(contents + f"{lat}:{lng}".encode("utf-8")).hexdigest()
-    )
-    vision_analysis = await get_or_set_cache(
-        cache_key,
-        lambda: analyze_project_photo(contents, content_type),
-        ttl_seconds=3600,
-        model_class=VisionAnalysis,
-    )
+        content_type = _validate_image(contents, file.content_type)
+        cache_key = (
+            "ghost-vision:"
+            + hashlib.sha256(contents + f"{lat}:{lng}".encode("utf-8")).hexdigest()
+        )
+        vision_analysis = await get_or_set_cache(
+            cache_key,
+            lambda: analyze_project_photo(contents, content_type),
+            ttl_seconds=3600,
+            model_class=VisionAnalysis,
+        )
+    else:
+        vision_analysis = build_no_photo_analysis(description)
+
     access_token = bearer_token_from_header(authorization)
     matched_contract = await query_contracts_within_radius(lat, lng, access_token)
-    contradiction = build_contradiction_string(matched_contract, vision_analysis)
+    contradiction = build_contradiction_string(matched_contract, vision_analysis) if has_photo else None
     report_id = await _insert_citizen_report(
         category="ghost_project",
         description=description,
@@ -407,34 +422,3 @@ async def get_report(
     return _report_from_row(data[0])
 
 
-@router.post("/contracts/seed", response_model=SeedContractsResponse)
-async def seed_contracts(
-    contracts: list[ContractSeed],
-    authorization: str = Header(...),
-    current_user: CurrentUser = Depends(get_current_user),
-) -> SeedContractsResponse:
-    """Bulk-insert demo contracts for the Ghost Project Tracker."""
-    # REMOVE BEFORE FINAL SUBMISSION: temporary helper endpoint for hackathon demo seeding.
-    if not contracts:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="At least one contract is required.",
-        )
-
-    records = [contract.model_dump(mode="json") for contract in contracts]
-    access_token = bearer_token_from_header(authorization)
-    try:
-        supabase = await get_supabase_client(access_token=access_token)
-        response = await supabase.table("contracts").insert(records).execute()
-    except Exception as exc:
-        logger.exception("Unable to seed ghost project contracts")
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Unable to seed contracts.",
-        ) from exc
-
-    data = getattr(response, "data", None) or []
-    return SeedContractsResponse(
-        inserted_count=len(data),
-        contracts=[ContractResponse.model_validate(row) for row in data],
-    )

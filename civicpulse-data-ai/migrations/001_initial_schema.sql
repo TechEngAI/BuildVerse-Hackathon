@@ -1,5 +1,11 @@
--- 001_initial_schema.sql
--- Supabase migration to create budget_records and contracts tables
+-- DEPRECATED / SUPERSEDED.
+--
+-- Do not run this migration. The authoritative CivicPulse schema is:
+-- ../../schema.sql
+--
+-- This file is retained only as historical context from the data/AI spike. It
+-- lacks the audited user_id ownership model and RLS policies in the canonical
+-- root schema, and running it can create tables that drift from app behavior.
 
 -- Enable UUID extension if not enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

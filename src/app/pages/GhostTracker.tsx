@@ -147,9 +147,6 @@ export function GhostTracker() {
       if (photo) {
         const blob = dataURLtoBlob(photo);
         formData.append("file", blob, "evidence.jpg");
-      } else {
-        const emptyBlob = new Blob([""], { type: "image/jpeg" });
-        formData.append("file", emptyBlob, "evidence.jpg");
       }
 
       const res = await apiFetch("/ghost/analyze-photo", {
@@ -401,7 +398,7 @@ export function GhostTracker() {
                     </button>
                     <button
                       onClick={handleSubmitEvidence}
-                      disabled={!photo || evidenceLoading}
+                      disabled={evidenceLoading}
                       className="flex-1 bg-[#1E8A5F] disabled:opacity-40 disabled:pointer-events-none text-white py-3 rounded-xl text-sm font-semibold active:opacity-80 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-[#1E8A5F]/10"
                     >
                       <CheckCircle size={16} />

@@ -27,9 +27,13 @@ app = FastAPI(
     version="0.1.0",
 )
 
-allowed_origins = [origin.strip() for origin in os.environ.get("ALLOWED_ORIGINS", "*").split(",") if origin.strip()]
-if not allowed_origins or allowed_origins == ["*"]:
-    allowed_origins = ["*"]
+# Update this default frontend origin to the final deployed frontend URL once it is known.
+allowed_origins_env = os.environ.get("ALLOWED_ORIGINS", "https://civicpulse-app.vercel.app")
+allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+if not allowed_origins:
+    raise RuntimeError(
+        "ALLOWED_ORIGINS must be set to the deployed frontend origin(s); do not use '*'."
+    )
 
 app.add_middleware(
     CORSMiddleware,

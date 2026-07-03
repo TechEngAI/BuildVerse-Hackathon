@@ -89,15 +89,10 @@ Auditor Citizen (via CivicPulse Platform)
       });
       setShowLetter(true);
     } catch (err: any) {
-      console.warn("Generating with local template fallback:", err);
-      setFoiResponse({
-        letter: getFallbackLetter(),
-        agencyName: "Relevant LGA / Public Works Department",
-        agencyEmail: "contact@gov.ng",
-        dueDate: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split("T")[0],
-        requestId: ""
-      });
-      setShowLetter(true);
+      console.error("FOI generation failed:", err);
+      setLocalError(
+        err?.message || "Unable to generate FOI request. Please check your authentication and try again."
+      );
     } finally {
       setGenerating(false);
     }

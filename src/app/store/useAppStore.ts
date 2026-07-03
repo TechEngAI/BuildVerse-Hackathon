@@ -6,7 +6,13 @@ export type Language = "pidgin" | "english" | "yoruba" | "hausa";
 export type Screen = "home" | "budget" | "ghost" | "social" | "contradiction" | "foi" | "reporter" | "profile" | "components" | "labs";
 export type NavTab = "home" | "budget" | "map" | "reports" | "profile";
 
-export const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+if (!import.meta.env.VITE_API_URL) {
+  throw new Error(
+    "VITE_API_URL is required and must be set at build time. Do not fall back to localhost in production."
+  );
+}
+
+export const BASE_URL = import.meta.env.VITE_API_URL;
 
 export function parseGps(gpsString: string): { lat: number; lng: number } {
   const matches = gpsString.match(/[+-]?([0-9]*[.])?[0-9]+/g);
@@ -362,10 +368,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (photo) {
           const blob = dataURLtoBlob(photo);
           formData.append("file", blob, "evidence.jpg");
-        } else {
-          // Send an empty placeholder blob if no photo is captured but endpoint demands file multipart
-          const emptyBlob = new Blob([""], { type: "image/jpeg" });
-          formData.append("file", emptyBlob, "evidence.jpg");
         }
 
         const res = await apiFetch("/ghost/analyze-photo", {
@@ -406,7 +408,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             program_name: program,
             lga,
             state,
-            received: received === "yes",
+            received: received !== "no", // partial is treated as received to avoid collapsing it into false
             amount_ngn: amountNgn
           })
         });
@@ -444,9 +446,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         if (issue.photo) {
           const blob = dataURLtoBlob(issue.photo);
           formData.append("file", blob, "evidence.jpg");
-        } else {
-          const emptyBlob = new Blob([""], { type: "image/jpeg" });
-          formData.append("file", emptyBlob, "evidence.jpg");
         }
 
         const res = await apiFetch("/ghost/analyze-photo", {
@@ -472,7 +471,7 @@ export const useAppStore = create<AppState>((set, get) => ({
             program_name: report.program,
             lga: report.lga || "Anaocha",
             state: report.state || "Anambra",
-            received: report.received === "yes",
+            received: report.received !== "no", // preserve partial as received for current schema
             amount_ngn: report.amount_ngn !== undefined ? report.amount_ngn : null
           })
         });
