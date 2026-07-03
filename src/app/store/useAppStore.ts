@@ -75,7 +75,7 @@ interface AppState {
 
   // Data Actions
   addIssue: (category: string, description: string, photo?: string, gps?: string) => Promise<void>;
-  addCitizenPoll: (program: string, received: "yes" | "no" | "partial") => Promise<void>;
+  addCitizenPoll: (program: string, received: "yes" | "no" | "partial", lga?: string, state?: string, amountNgn?: number | null) => Promise<void>;
   syncOfflineQueue: () => Promise<void>;
 }
 
@@ -334,6 +334,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         const { lat, lng } = parseGps(gps);
         formData.append("lat", lat.toString());
         formData.append("lng", lng.toString());
+        if (description) {
+          formData.append("description", description);
+        }
         
         if (photo) {
           const blob = dataURLtoBlob(photo);
@@ -360,12 +363,15 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().loadOfflineData();
   },
 
-  addCitizenPoll: async (program, received) => {
+  addCitizenPoll: async (program, received, lga = "Anaocha", state = "Anambra", amountNgn = null) => {
     const report: CitizenReport = {
       program,
       received,
       timestamp: Date.now(),
-      synced: false
+      synced: false,
+      lga,
+      state,
+      amount_ngn: amountNgn
     };
 
     const id = await db.saveCitizenReport(report);
@@ -377,8 +383,10 @@ export const useAppStore = create<AppState>((set, get) => ({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             program_name: program,
-            received: received === "yes" || (received === "partial" ? true : false),
-            partial: received === "partial"
+            lga,
+            state,
+            received: received === "yes",
+            amount_ngn: amountNgn
           })
         });
 
@@ -408,6 +416,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         const { lat, lng } = parseGps(issue.gps);
         formData.append("lat", lat.toString());
         formData.append("lng", lng.toString());
+        if (issue.description) {
+          formData.append("description", issue.description);
+        }
         
         if (issue.photo) {
           const blob = dataURLtoBlob(issue.photo);
@@ -438,8 +449,10 @@ export const useAppStore = create<AppState>((set, get) => ({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             program_name: report.program,
-            received: report.received === "yes" || (report.received === "partial" ? true : false),
-            partial: report.received === "partial"
+            lga: report.lga || "Anaocha",
+            state: report.state || "Anambra",
+            received: report.received === "yes",
+            amount_ngn: report.amount_ngn !== undefined ? report.amount_ngn : null
           })
         });
 

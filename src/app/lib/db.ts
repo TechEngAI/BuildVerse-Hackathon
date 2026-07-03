@@ -16,6 +16,9 @@ export interface CitizenReport {
   received: string; // "yes" | "no" | "partial"
   timestamp: number;
   synced: boolean;
+  lga?: string;
+  state?: string;
+  amount_ngn?: number | null;
 }
 
 interface CivicPulseDB extends DBSchema {

@@ -25,23 +25,26 @@ export function GhostTracker() {
   const [selectedPin, setSelectedPin] = useState<typeof mapPins[0] | null>(null);
   const [subView, setSubView] = useState<"map" | "upload" | "uploaded">("map");
   const [photo, setPhoto] = useState<string | null>(null);
+  const [description, setDescription] = useState("");
   const [isUsingGoogleMap, setIsUsingGoogleMap] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
 
   const [evidenceLoading, setEvidenceLoading] = useState(false);
   const [evidenceError, setEvidenceError] = useState("");
   const [analyzedResult, setAnalyzedResult] = useState<{
+    vision_analysis?: {
+      scene_description: string;
+      infrastructure_type: string;
+      completion_pct: number;
+      visible_issues: string[];
+    };
     matched_contract?: {
-      name: string;
-      contractor: string;
-      amount: string;
-      officialStatus: string;
-      actualProgress: string;
+      project_name: string;
+      contractor_name: string;
+      awarded_amount_ngn: number;
+      official_status: string;
     };
-    contradiction?: {
-      narrative: string;
-      gap: number;
-    };
+    contradiction?: string | null;
   } | null>(null);
 
   const nigeriaPath = "2.5,0 19,2 44,1 77.5,5 98,10 100,40 94,60 86,75 61,85 48,97 28,97 11,90 0,75 0,50 7,30 2.5,0";
@@ -103,6 +106,7 @@ export function GhostTracker() {
   const handleTriggerUpload = () => {
     setSubView("upload");
     setPhoto(null);
+    setDescription("");
     setEvidenceError("");
   };
 
@@ -121,7 +125,7 @@ export function GhostTracker() {
         // Offline: save report to IndexedDB
         await addIssue(
           "Ghost Project Verification",
-          `Citizen report on ${selectedPin.name}. Contractor claim: ${selectedPin.officialStatus}. Citizen reality: ${photo ? "Photo evidence supplied." : "Empty plot observed."}`,
+          `Citizen report on ${selectedPin.name}. Description: ${description || "None"}. Status: ${selectedPin.officialStatus}.`,
           photo || undefined,
           "9.0820°N, 7.4130°E"
         );
@@ -136,6 +140,9 @@ export function GhostTracker() {
 
       formData.append("lat", lat.toString());
       formData.append("lng", lng.toString());
+      if (description.trim()) {
+        formData.append("description", description);
+      }
       
       if (photo) {
         const blob = dataURLtoBlob(photo);
@@ -156,6 +163,7 @@ export function GhostTracker() {
       }
 
       setAnalyzedResult({
+        vision_analysis: data.vision_analysis,
         matched_contract: data.matched_contract,
         contradiction: data.contradiction
       });
@@ -326,8 +334,8 @@ export function GhostTracker() {
                     </div>
                   )}
 
-                  <CivicCard className="p-4">
-                    <p className="text-[#E8EDF2] text-xs font-semibold mb-3">{t("ghostPhoto")}</p>
+                  <CivicCard className="p-4 space-y-3">
+                    <p className="text-[#E8EDF2] text-xs font-semibold mb-1">{t("ghostPhoto")}</p>
                     
                     {photo ? (
                       <div className="relative rounded-xl overflow-hidden aspect-video bg-[#0E1116] border border-white/[0.06] flex items-center justify-center">
@@ -350,17 +358,29 @@ export function GhostTracker() {
                       <button
                         type="button"
                         onClick={handleCapturePhoto}
-                        className="w-full h-36 border border-dashed border-white/[0.1] rounded-xl flex flex-col items-center justify-center gap-2.5 bg-white/[0.01] hover:bg-white/[0.03] transition-colors"
+                        className="w-full h-28 border border-dashed border-white/[0.1] rounded-xl flex flex-col items-center justify-center gap-2 bg-white/[0.01] hover:bg-white/[0.03] transition-colors"
                       >
-                        <div className="w-10 h-10 bg-white/[0.04] rounded-full flex items-center justify-center border border-white/[0.05]">
-                          <Camera size={18} className="text-[#8B949E]" />
+                        <div className="w-8 h-8 bg-white/[0.04] rounded-full flex items-center justify-center border border-white/[0.05]">
+                          <Camera size={14} className="text-[#8B949E]" />
                         </div>
-                        <span className="text-xs text-[#8B949E]">{t("ghostPhotoUpload")}</span>
+                        <span className="text-[11px] text-[#8B949E]">{t("ghostPhotoUpload")}</span>
                       </button>
                     )}
 
+                    {/* Citizen observation text area */}
+                    <div className="space-y-1">
+                      <label className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono">Citizen Observation (optional)</label>
+                      <textarea
+                        rows={2}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="E.g., Empty plot of land, contractor claims work complete but no center found..."
+                        className="w-full bg-[#0E1116] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F] placeholder-white/20 resize-none leading-relaxed"
+                      />
+                    </div>
+
                     {/* GPS Locator */}
-                    <div className="mt-4 p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl flex items-center justify-between">
+                    <div className="p-3 bg-white/[0.02] border border-white/[0.06] rounded-xl flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Navigation size={13} className="text-[#1E8A5F]" />
                         <span className="text-[#8B949E] text-[10px] font-mono font-dm-mono">{t("ghostGPS")}</span>
@@ -385,7 +405,7 @@ export function GhostTracker() {
                       className="flex-1 bg-[#1E8A5F] disabled:opacity-40 disabled:pointer-events-none text-white py-3 rounded-xl text-sm font-semibold active:opacity-80 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-[#1E8A5F]/10"
                     >
                       <CheckCircle size={16} />
-                      {evidenceLoading ? "Analyzing photo..." : t("submit")}
+                      {evidenceLoading ? "Analyzing..." : t("submit")}
                     </button>
                   </div>
                 </div>
@@ -399,16 +419,33 @@ export function GhostTracker() {
                   <div>
                     <h4 className="text-[#E8EDF2] text-sm font-semibold">{t("ghostUploaded")}</h4>
                     
+                    {analyzedResult?.vision_analysis && (
+                      <div className="mt-4 p-3.5 bg-[#1C2128] border border-white/[0.06] rounded-xl text-left space-y-2">
+                        <p className="text-[#E8B95C] text-[10px] font-bold uppercase tracking-wider font-dm-mono">
+                          AI Visual Audit Summary
+                        </p>
+                        <p className="text-[#C4C9D0] text-[11px] leading-relaxed">
+                          <strong>Scene:</strong> {analyzedResult.vision_analysis.scene_description}
+                        </p>
+                        <p className="text-[#8B949E] text-[10px]">
+                          <strong>Type:</strong> {analyzedResult.vision_analysis.infrastructure_type} | 
+                          <strong> Completion Estimate:</strong> {analyzedResult.vision_analysis.completion_pct}%
+                        </p>
+                        {analyzedResult.vision_analysis.visible_issues?.length > 0 && (
+                          <p className="text-[#FF6B65] text-[10px]">
+                            <strong>Visible Issues:</strong> {analyzedResult.vision_analysis.visible_issues.join(", ")}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {analyzedResult?.contradiction && (
-                      <div className="mt-4 p-3.5 bg-[#E3433D]/10 border border-[#E3433D]/30 rounded-xl text-left space-y-2">
-                        <p className="text-[#FF6B65] text-xs font-bold font-sora">
-                          Contradiction Identified!
+                      <div className="mt-3 p-3.5 bg-[#E3433D]/10 border border-[#E3433D]/30 rounded-xl text-left space-y-1">
+                        <p className="text-[#FF6B65] text-[10px] font-bold uppercase tracking-wider font-dm-mono">
+                          Official vs Reality Contradiction
                         </p>
                         <p className="text-[#8B949E] text-[10px] leading-relaxed">
-                          {analyzedResult.contradiction.narrative}
-                        </p>
-                        <p className="text-[#8B949E] text-[10px] font-dm-mono">
-                          Deviation Gap: {analyzedResult.contradiction.gap}%
+                          {analyzedResult.contradiction}
                         </p>
                       </div>
                     )}
@@ -416,7 +453,7 @@ export function GhostTracker() {
                     <p className="text-[#8B949E] text-[10px] mt-3 leading-relaxed">
                       {isOffline
                         ? t("reportOffline")
-                        : "Verification completed successfully. This report has been linked to the contract records."}
+                        : "Verification completed successfully. This report has been linked to the official contract records."}
                     </p>
                   </div>
                   <button

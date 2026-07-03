@@ -3,19 +3,30 @@ import { useTranslation } from "react-i18next";
 import { CivicCard } from "../components/CivicCard";
 import { motion } from "motion/react";
 import {
-  FileText, Copy, Send, Check, ShieldAlert, AlertCircle
+  FileText, Copy, Send, Check, ShieldAlert, AlertCircle, Mail, Clock
 } from "lucide-react";
 import { apiFetch } from "../store/useAppStore";
+
+type FoiCategory = "road" | "health" | "education" | "budget" | "default";
 
 export function FoiGenerator() {
   const { t } = useTranslation();
   const [topic, setTopic] = useState("");
+  const [category, setCategory] = useState<FoiCategory>("default");
+  
   const [showLetter, setShowLetter] = useState(false);
   const [copied, setCopied] = useState(false);
   const [sent, setSent] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [letterText, setLetterText] = useState("");
   const [localError, setLocalError] = useState("");
+
+  const [foiResponse, setFoiResponse] = useState<{
+    letter: string;
+    agencyName: string;
+    agencyEmail: string;
+    dueDate: string;
+    requestId: string;
+  } | null>(null);
 
   const getFallbackLetter = () => {
     return `THE FREEDOM OF INFORMATION ACT, 2011
@@ -46,6 +57,11 @@ Auditor Citizen (via CivicPulse Platform)
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
+    if (topic.length < 10 || topic.length > 1000) {
+      setLocalError("Request prompt must be between 10 and 1000 characters.");
+      return;
+    }
+
     setGenerating(true);
     setLocalError("");
     setCopied(false);
@@ -55,17 +71,32 @@ Auditor Citizen (via CivicPulse Platform)
       const res = await apiFetch("/foi/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic })
+        body: JSON.stringify({ 
+          question: topic,
+          category: category
+        })
       });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.detail || "Failed to generate FOI request.");
       }
-      setLetterText(data.letter || data.generated_letter || getFallbackLetter());
+      setFoiResponse({
+        letter: data.letter || getFallbackLetter(),
+        agencyName: data.agency_name || "Relevant LGA / Public Works Department",
+        agencyEmail: data.agency_email || "contact@gov.ng",
+        dueDate: data.due_date || new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split("T")[0],
+        requestId: data.request_id || ""
+      });
       setShowLetter(true);
     } catch (err: any) {
       console.warn("Generating with local template fallback:", err);
-      setLetterText(getFallbackLetter());
+      setFoiResponse({
+        letter: getFallbackLetter(),
+        agencyName: "Relevant LGA / Public Works Department",
+        agencyEmail: "contact@gov.ng",
+        dueDate: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split("T")[0],
+        requestId: ""
+      });
       setShowLetter(true);
     } finally {
       setGenerating(false);
@@ -73,7 +104,8 @@ Auditor Citizen (via CivicPulse Platform)
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(letterText);
+    if (!foiResponse) return;
+    navigator.clipboard.writeText(foiResponse.letter);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -136,6 +168,24 @@ Auditor Citizen (via CivicPulse Platform)
             </div>
           )}
 
+          {/* Category Select Input */}
+          <div className="space-y-1.5">
+            <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-dm-mono font-bold block">
+              Project Category
+            </label>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as FoiCategory)}
+              className="w-full bg-[#1C2128] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F]"
+            >
+              <option value="default">Default / General Audit</option>
+              <option value="road">Road Infrastructure</option>
+              <option value="health">Healthcare Facilities</option>
+              <option value="education">Schools & Education</option>
+              <option value="budget">Budget Discrepancies</option>
+            </select>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-[#8B949E] text-[10px] uppercase tracking-widest font-mono font-dm-mono font-bold block">
               {t("foiLabel")}
@@ -152,7 +202,7 @@ Auditor Citizen (via CivicPulse Platform)
 
           <button
             onClick={handleGenerate}
-            disabled={!topic.trim() || generating}
+            disabled={!topic.trim() || topic.length < 10 || topic.length > 1000 || generating}
             className="w-full bg-[#1E8A5F] disabled:opacity-40 disabled:pointer-events-none text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-1.5 active:scale-[0.98] transition-all shadow-md shadow-[#1E8A5F]/15"
           >
             <FileText size={16} />
@@ -187,6 +237,20 @@ Auditor Citizen (via CivicPulse Platform)
             </div>
           </div>
 
+          {/* Target Agency and Contact Info Card */}
+          {foiResponse && (
+            <CivicCard className="p-4 space-y-2">
+              <p className="text-[#8B949E] text-[9px] uppercase tracking-widest font-mono font-dm-mono">Target Authority</p>
+              <h4 className="text-[#E8EDF2] text-xs font-bold leading-snug font-sora">
+                {foiResponse.agencyName}
+              </h4>
+              <div className="flex items-center gap-1.5 text-[#8B949E] text-[10px]">
+                <Mail size={12} className="text-[#1E8A5F]" />
+                <span className="font-mono">{foiResponse.agencyEmail}</span>
+              </div>
+            </CivicCard>
+          )}
+
           {/* Legal Deadline Card */}
           <div className="bg-[#E8B95C]/5 border border-[#E8B95C]/35 rounded-xl p-3.5 flex items-center justify-between gap-4">
             <div className="space-y-1">
@@ -196,6 +260,12 @@ Auditor Citizen (via CivicPulse Platform)
               <p className="text-[#8B949E] text-[10px] leading-snug">
                 Under the FOI Act 2011, public institutions must reply within <strong>7 working days</strong>.
               </p>
+              {foiResponse && (
+                <div className="flex items-center gap-1.5 text-[9px] text-[#8B949E] font-mono pt-1">
+                  <Clock size={11} className="text-[#E8B95C]" />
+                  <span>Reply Due: {foiResponse.dueDate}</span>
+                </div>
+              )}
             </div>
             {renderDeadlineRing(7, 7)}
           </div>
@@ -203,7 +273,7 @@ Auditor Citizen (via CivicPulse Platform)
           {/* Generated Formal Letter Layout */}
           <CivicCard className="p-5 font-mono text-[11px] leading-relaxed text-[#C4C9D0] overflow-y-auto max-h-[300px] border border-white/[0.08] shadow-inner select-text whitespace-pre-line">
             <div id="foi-letter-body" className="space-y-4">
-              {letterText}
+              {foiResponse?.letter}
             </div>
           </CivicCard>
           

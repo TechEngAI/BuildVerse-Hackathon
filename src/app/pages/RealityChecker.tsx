@@ -5,46 +5,98 @@ import { CivicCard } from "../components/CivicCard";
 import { ChartWrapper } from "../components/ChartWrapper";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { motion } from "motion/react";
-import { Users, Check, AlertOctagon, HelpCircle } from "lucide-react";
+import { Users, Check, AlertOctagon, HelpCircle, MapPin, Landmark, AlertCircle } from "lucide-react";
 
 export function RealityChecker() {
   const { t } = useTranslation();
   const { isOffline, addCitizenPoll } = useAppStore();
+  
+  const [selectedOption, setSelectedOption] = useState<"yes" | "no" | "partial" | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
-  const [liveStats, setLiveStats] = useState({ yes: 124, no: 820, partial: 236 });
+  const [localError, setLocalError] = useState("");
+
+  // Form parameters matching POST /reality/report
+  const [lga, setLga] = useState("Anaocha");
+  const [stateName, setStateName] = useState("Anambra");
+  const [amountNgn, setAmountNgn] = useState<number | "">("");
+
+  const [liveStats, setLiveStats] = useState<{
+    program_name: string;
+    total_reports: number;
+    received_count: number;
+    reality_score_pct: number;
+    summary: string;
+  } | null>(null);
+
+  const programName = "TraderMoni / Market Hawker Fund";
+
+  const fetchScore = async () => {
+    if (isOffline) return;
+    try {
+      const res = await apiFetch(`/reality/score/${encodeURIComponent(programName)}`);
+      const data = await res.json();
+      if (res.ok && data) {
+        setLiveStats({
+          program_name: data.program_name || programName,
+          total_reports: data.total_reports ?? 1290,
+          received_count: data.received_count ?? 194,
+          reality_score_pct: data.reality_score_pct ?? 15.0,
+          summary: data.summary || "No audits verified yet."
+        });
+      }
+    } catch (e) {
+      console.error("Failed to load reality score:", e);
+    }
+  };
 
   useEffect(() => {
-    const fetchScore = async () => {
-      if (isOffline) return;
-      try {
-        const res = await apiFetch(`/reality/score/${encodeURIComponent("TraderMoni / Market Hawker Fund")}`);
-        const data = await res.json();
-        if (res.ok && data) {
-          setLiveStats({
-            yes: data.yes ?? 124,
-            no: data.no ?? 820,
-            partial: data.partial ?? 236
-          });
-        }
-      } catch (e) {
-        console.error("Failed to load reality score:", e);
-      }
-    };
     fetchScore();
   }, [isOffline]);
 
-  const handleVote = async (option: "yes" | "no" | "partial") => {
-    setHasVoted(true);
-    await addCitizenPoll("TraderMoni / Market Hawker Fund", option);
-
-    setLiveStats((prev) => ({
-      ...prev,
-      [option]: prev[option] + 1
-    }));
+  const handleSelectOption = (opt: "yes" | "no" | "partial") => {
+    setSelectedOption(opt);
+    setLocalError("");
   };
 
-  const totalVotes = liveStats.yes + liveStats.no + liveStats.partial;
-  const matchPercentage = totalVotes > 0 ? (liveStats.yes / totalVotes) * 100 : 0;
+  const handleVoteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOption) {
+      setLocalError("Please select whether you received the fund.");
+      return;
+    }
+    if (!lga.trim() || !stateName.trim()) {
+      setLocalError("Please fill out both LGA and State fields.");
+      return;
+    }
+
+    setLocalError("");
+    const parsedAmount = amountNgn !== "" ? parseFloat(amountNgn.toString()) : null;
+
+    try {
+      // Save locally to IndexedDB queue (and upload to backend /reality/report if online)
+      await addCitizenPoll(
+        programName,
+        selectedOption,
+        lga,
+        stateName,
+        parsedAmount
+      );
+      
+      setHasVoted(true);
+      
+      // Refresh live stats after submission
+      setTimeout(() => {
+        fetchScore();
+      }, 1000);
+    } catch (err: any) {
+      setLocalError(err.message || "An error occurred during submission.");
+    }
+  };
+
+  const totalReports = liveStats?.total_reports ?? 1290;
+  const matchPercentage = liveStats?.reality_score_pct ?? 15.0;
+  const receivedCount = liveStats?.received_count ?? 194;
+  const unreceivedCount = totalReports - receivedCount;
 
   const comparisonData = [
     { name: "Official claim", percentage: 100, fill: "#1E8A5F" },
@@ -92,44 +144,114 @@ export function RealityChecker() {
       {/* Poll Section */}
       <CivicCard className="p-4" severity={hasVoted ? "neutral" : "warning"}>
         {!hasVoted ? (
-          <div className="space-y-3.5">
+          <form onSubmit={handleVoteSubmit} className="space-y-3.5">
             <div className="flex items-center gap-2">
               <HelpCircle size={14} className="text-[#E8B95C]" />
               <p className="text-[#E8EDF2] text-xs font-semibold">{t("socialQ")}</p>
             </div>
+
+            {localError && (
+              <div className="bg-[#E3433D]/10 border border-[#E3433D]/30 text-[#FF6B65] text-xs rounded-xl p-2.5 flex items-start gap-2">
+                <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                <span>{localError}</span>
+              </div>
+            )}
             
-            <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
               {["yes", "no", "partial"].map((opt) => (
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
+                <button
+                  type="button"
                   key={opt}
-                  onClick={() => handleVote(opt as any)}
-                  className={`w-full bg-[#1C2128] border border-white/[0.06] text-[#C4C9D0] text-xs font-semibold py-3 rounded-xl transition-all ${
-                    opt === "yes"
-                      ? "hover:bg-[#1E8A5F] hover:text-white"
-                      : opt === "no"
-                      ? "hover:bg-[#E3433D] hover:text-white"
-                      : "hover:bg-[#E8B95C] hover:text-[#0E1116]"
+                  onClick={() => handleSelectOption(opt as any)}
+                  className={`flex-1 border text-[11px] font-semibold py-2.5 rounded-xl transition-all ${
+                    selectedOption === opt
+                      ? opt === "yes"
+                        ? "bg-[#1E8A5F] border-[#1E8A5F] text-white shadow-md shadow-[#1E8A5F]/20"
+                        : opt === "no"
+                        ? "bg-[#E3433D] border-[#E3433D] text-white shadow-md shadow-[#E3433D]/20"
+                        : "bg-[#E8B95C] border-[#E8B95C] text-[#0E1116] shadow-md shadow-[#E8B95C]/20"
+                      : "bg-[#1C2128] border-white/[0.06] text-[#C4C9D0] hover:bg-white/[0.03]"
                   }`}
                 >
                   {opt === "yes" ? t("socialYes") : opt === "no" ? t("socialNo") : t("socialPartial")}
-                </motion.button>
+                </button>
               ))}
             </div>
-          </div>
+
+            {/* Verification Inputs Grid */}
+            <div className="grid grid-cols-2 gap-3.5 pt-1">
+              <div className="space-y-1">
+                <label className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono flex items-center gap-1">
+                  <MapPin size={10} className="text-[#1E8A5F]" /> State
+                </label>
+                <input
+                  type="text"
+                  value={stateName}
+                  onChange={(e) => setStateName(e.target.value)}
+                  placeholder="E.g., Anambra"
+                  className="w-full bg-[#0E1116] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F]"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono flex items-center gap-1">
+                  <MapPin size={10} className="text-[#1E8A5F]" /> LGA
+                </label>
+                <input
+                  type="text"
+                  value={lga}
+                  onChange={(e) => setLga(e.target.value)}
+                  placeholder="E.g., Anaocha"
+                  className="w-full bg-[#0E1116] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F]"
+                />
+              </div>
+
+              {(selectedOption === "yes" || selectedOption === "partial") && (
+                <div className="col-span-2 space-y-1">
+                  <label className="text-[#8B949E] text-[9px] uppercase font-bold tracking-wider font-dm-mono flex items-center gap-1">
+                    <Landmark size={10} className="text-[#E8B95C]" /> Amount Received (₦, optional)
+                  </label>
+                  <input
+                    type="number"
+                    value={amountNgn}
+                    onChange={(e) => setAmountNgn(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                    placeholder="E.g., 10000"
+                    className="w-full bg-[#0E1116] border border-white/[0.07] rounded-xl px-3 py-2 text-xs text-[#E8EDF2] focus:outline-none focus:border-[#1E8A5F]"
+                  />
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-[#1E8A5F] hover:bg-[#26A674] text-white font-semibold py-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-all shadow-md shadow-[#1E8A5F]/15 active:scale-[0.98]"
+            >
+              <Check size={16} /> Submit Audit Verification
+            </button>
+          </form>
         ) : (
           <div className="py-4 text-center space-y-3 slide-up">
-            <div className="w-9 h-9 rounded-full bg-[#1E8A5F]/15 border border-[#1E8A5F]/30 flex items-center justify-center mx-auto">
+            <div className="w-9 h-9 rounded-full bg-[#1E8A5F]/15 border border-[#1E8A5F]/30 flex items-center justify-center mx-auto animate-bounce">
               <Check size={18} className="text-[#1E8A5F]" />
             </div>
             <div>
               <p className="text-[#E8EDF2] text-xs font-bold font-sora">{t("socialThank")}</p>
-              <p className="text-[#8B949E] text-[10px] mt-1">
+              <p className="text-[#8B949E] text-[10px] mt-1 leading-relaxed">
                 {isOffline
                   ? t("reportOffline")
-                  : "Report synced! Your feedback updates the official reality score in real-time."}
+                  : "Report synced! Your verification updates the official reality score in real-time."}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setHasVoted(false);
+                setSelectedOption(null);
+                setAmountNgn("");
+              }}
+              className="text-[#1E8A5F] text-[10px] font-semibold hover:underline"
+            >
+              Submit another check
+            </button>
           </div>
         )}
       </CivicCard>
@@ -171,27 +293,22 @@ export function RealityChecker() {
               Crowdsourced Discrepancy
             </p>
           </div>
-          <p className="text-[#8B949E] text-[10px] leading-relaxed mb-4">
-            Only <strong className="text-[#FF6B65] font-bold">{Math.round(matchPercentage)}%</strong> of audited citizens confirm receiving loans. The remaining respondents report partial or zero payments.
+          
+          <p className="text-[#8B949E] text-[11px] leading-relaxed mb-4 italic">
+            <strong>Live AI Auditor Narrative:</strong> {liveStats?.summary || "Only 15% of audited citizens confirm receiving loans. The remaining respondents report partial or zero payments."}
           </p>
 
-          <div className="grid grid-cols-3 gap-2 text-center pt-3.5 border-t border-white/[0.05]">
+          <div className="grid grid-cols-2 gap-2 text-center pt-3.5 border-t border-white/[0.05]">
             <div>
-              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Confirmed</p>
+              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Confirmed Recipients</p>
               <p className="text-[#1E8A5F] text-xs font-bold mt-0.5 font-dm-mono">
-                {liveStats.yes}
+                {receivedCount}
               </p>
             </div>
             <div>
-              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Unreceived</p>
+              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Unreceived / Audited Citizens</p>
               <p className="text-[#E3433D] text-xs font-bold mt-0.5 font-dm-mono">
-                {liveStats.no}
-              </p>
-            </div>
-            <div>
-              <p className="text-[#8B949E] text-[8px] uppercase tracking-widest font-mono font-dm-mono">Partial</p>
-              <p className="text-[#E8B95C] text-xs font-bold mt-0.5 font-dm-mono">
-                {liveStats.partial}
+                {unreceivedCount}
               </p>
             </div>
           </div>
