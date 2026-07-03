@@ -1,10 +1,10 @@
-﻿# Migrated from Claude to Grok (xAI) — OpenAI-compatible API
+# Migrated from Claude to Grok (xAI) — OpenAI-compatible API
 fastapi==0.115.6
-uvicorn[standard]>=0.34.0
+uvicorn[standard]==0.34.0
 supabase==2.11.0
-httpx==0.27.2
 gotrue==2.11.0
 openai==1.93.0
+httpx>=0.26,<0.28
 pandas==2.2.3
 numpy==2.2.1
 requests==2.32.3
