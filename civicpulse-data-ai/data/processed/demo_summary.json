@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-07-02",
+  "budget_alert_sample": {
+    "id": "10ae29b6-d296-4851-964e-6cc1b55679ca",
+    "ministry": "Delta State Ministry of Health (COVID-19 Palliatives)",
+    "state": "Delta",
+    "year": 2020,
+    "line_item": "COVID-19 Palliatives",
+    "allocated_ngn": "50130000000",
+    "actual_ngn": "4920000000",
+    "deviation_pct": "PLACEHOLDER",
+    "alert_fired": "False",
+    "alert_severity": "PLACEHOLDER",
+    "sources_json": {
+      "note": "Verified real anchor figure, independently reported.",
+      "type": "real_reported"
+    }
+  },
+  "contract_anchor": {
+    "id": "4bc423b2-278c-400a-ad36-dfee69ed0ddb",
+    "project_name": "School Rehabilitation Project",
+    "contractor_name": "GhostCorp Ltd",
+    "awarded_amount_ngn": "45000000",
+    "state": "Anambra",
+    "lga": "PLACEHOLDER",
+    "official_status": "PLACEHOLDER",
+    "citizen_verified_status": "Ghost / Not Found",
+    "location_lat": "PLACEHOLDER",
+    "location_lng": "PLACEHOLDER",
+    "photo_evidence_url": "PLACEHOLDER"
+  },
+  "notes": {
+    "budget": "Delta COVID row is a verified real anchor from the processed budget dataset.",
+    "contract": "Anambra school rehabilitation row is the current verified contract anchor from the processed contracts dataset."
+  }
+}
