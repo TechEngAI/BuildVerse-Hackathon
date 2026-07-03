@@ -55,8 +55,14 @@ interface AppState {
     partial: number;
   };
   activeFilter: "all" | "audited" | "unaudited";
+  
+  // PWA Install State
+  deferredInstallPrompt: any;
+  isInstallable: boolean;
 
   // Actions
+  setDeferredInstallPrompt: (prompt: any) => void;
+  triggerInstall: () => Promise<void>;
   setLang: (lang: Language) => void;
   setScreen: (screen: Screen) => void;
   setTab: (tab: NavTab) => void;
@@ -122,6 +128,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   offlineIssues: [],
   citizenReports: [],
   activeFilter: "all",
+  deferredInstallPrompt: null,
+  isInstallable: false,
+
+  setDeferredInstallPrompt: (prompt) => set({ deferredInstallPrompt: prompt, isInstallable: !!prompt }),
+  
+  triggerInstall: async () => {
+    const prompt = get().deferredInstallPrompt;
+    if (!prompt) return;
+    prompt.prompt();
+    const choice = await prompt.userChoice;
+    if (choice.outcome === "accepted") {
+      console.log("User installed the CivicPulse PWA app.");
+    }
+    set({ deferredInstallPrompt: null, isInstallable: false });
+  },
 
   // Load initial Auth state from local storage
   user: (() => {

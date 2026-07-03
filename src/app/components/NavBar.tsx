@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useAppStore, Language, Screen, NavTab } from "../store/useAppStore";
 import {
-  Home, BarChart2, Map, FileText, User, Bell, Layers, Wifi, WifiOff, ChevronLeft, LogOut
+  Home, BarChart2, Map, FileText, User, Bell, Layers, Wifi, WifiOff, ChevronLeft, LogOut, Download
 } from "lucide-react";
 
 interface NavBarProps {
@@ -12,7 +12,7 @@ interface NavBarProps {
 export function TopBar({ onBack, showBack }: NavBarProps) {
   const { t } = useTranslation();
   const {
-    lang, setLang, screen, setScreen, isOffline, setIsOffline, logout
+    lang, setLang, screen, setScreen, isOffline, setIsOffline, logout, isInstallable, triggerInstall
   } = useAppStore();
 
   const languages: { key: Language; label: string }[] = [
@@ -89,6 +89,17 @@ export function TopBar({ onBack, showBack }: NavBarProps) {
         >
           <Layers size={15} />
         </button>
+
+        {/* PWA Install Trigger Shortcut */}
+        {isInstallable && (
+          <button
+            onClick={triggerInstall}
+            className="p-1 text-[#E8B95C] hover:text-[#26B07A] transition-colors"
+            title="Install Mobile App"
+          >
+            <Download size={15} className="animate-bounce" />
+          </button>
+        )}
 
         <button className="p-1 text-[#8B949E] hover:text-white transition-colors relative">
           <Bell size={15} />

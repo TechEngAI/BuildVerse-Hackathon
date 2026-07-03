@@ -3,11 +3,15 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "motion/react";
 import { AuthScreen } from "./AuthScreen";
 import { CivicCard } from "../components/CivicCard";
-import { FileText, Map, Shield, Landmark, Play, LogIn, ChevronRight } from "lucide-react";
+import { useAppStore } from "../store/useAppStore";
+import { FileText, Map, Shield, Landmark, LogIn, ChevronRight } from "lucide-react";
 
 export function LandingPage() {
   const { t } = useTranslation();
   
+  // App store triggers for PWA installability
+  const { isInstallable, triggerInstall } = useAppStore();
+
   // Splash Screen States
   const [showSplash, setShowSplash] = useState(true);
   const [splashProgress, setSplashProgress] = useState(0);
@@ -91,16 +95,16 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#0E1116] flex flex-col relative overflow-hidden font-inter">
-      {/* Background Matrix Video Stream */}
+      {/* Local Background Video Stream */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover opacity-[0.16] mix-blend-screen pointer-events-none"
+        className="absolute inset-0 w-full h-full object-cover opacity-[0.22] mix-blend-screen pointer-events-none"
       >
         <source 
-          src="https://assets.mixkit.co/videos/preview/mixkit-matrix-style-falling-green-numbers-42861-large.mp4" 
+          src="/PixVerse_V6_Image_Text_540P_Futuristic_hologra.mp4" 
           type="video/mp4" 
         />
       </video>
@@ -161,6 +165,22 @@ export function LandingPage() {
                   <p className="text-[#8B949E] text-[8px] uppercase tracking-wider mt-1 font-bold">Accuracy</p>
                 </CivicCard>
               </div>
+
+              {/* Install PWA Prompt Banner */}
+              {isInstallable && (
+                <div className="bg-[#E8B95C]/10 border border-[#E8B95C]/35 rounded-xl p-3.5 flex items-center justify-between gap-3 shadow-md animate-fade-in">
+                  <div className="text-left space-y-0.5">
+                    <p className="text-[#E8B95C] text-xs font-bold font-sora">Install CivicPulse App</p>
+                    <p className="text-[#8B949E] text-[10px] leading-snug">Add to your Home Screen for faster offline audits.</p>
+                  </div>
+                  <button
+                    onClick={triggerInstall}
+                    className="bg-[#E8B95C] text-[#0E1116] text-[10px] font-bold px-3 py-1.5 rounded-lg font-sora shrink-0 active:scale-95 transition-all shadow-md shadow-[#E8B95C]/20"
+                  >
+                    Install Now
+                  </button>
+                </div>
+              )}
 
               {/* Feature Previews */}
               <div className="space-y-2.5">

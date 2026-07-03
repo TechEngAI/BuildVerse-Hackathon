@@ -1,6 +1,13 @@
-  import { createRoot } from "react-dom/client";
-  import "./i18n.ts";
-  import App from "./app/App.tsx";
-  import "./styles/index.css";
+import { createRoot } from "react-dom/client";
+import "./i18n.ts";
+import App from "./app/App.tsx";
+import "./styles/index.css";
+import { useAppStore } from "./app/store/useAppStore";
 
-  createRoot(document.getElementById("root")!).render(<App />);
+// Capture native PWA installation prompts
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  useAppStore.getState().setDeferredInstallPrompt(e);
+});
+
+createRoot(document.getElementById("root")!).render(<App />);
